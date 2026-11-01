@@ -1,0 +1,31 @@
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Frontend (Flutter)
+frontend/.dart_tool/
+frontend/.pub/
+frontend/.pub-cache/
+frontend/build/
+frontend/.flutter-plugins-dependencies
+frontend/.flutter-plugins
+frontend/android/app/debug/
+frontend/android/app/profile/
+frontend/android/app/release/
+
+# Backend (Laravel)
+backend/vendor/
+backend/node_modules/
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/storage/*.key
+backend/storage/app/public/*
+!backend/storage/app/public/.gitignore
+backend/database/database.sqlite
+backend/database/database.sqlite-journal
+backend/.phpunit.cache
+backend/.phpunit.result.cache
