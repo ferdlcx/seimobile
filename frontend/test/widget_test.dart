@@ -444,7 +444,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Jurnal Kunjungan'), findsOneWidget);
-      expect(find.text('HASIL KUNJUNGAN'), findsOneWidget);
+      expect(find.text('HASIL KUNJUNGAN (1/3)'), findsOneWidget);
+
+      // Klik Lanjut ke Catatan & Bukti
+      await tester.ensureVisible(find.text('Lanjut ke Catatan & Bukti'));
+      await tester.tap(find.text('Lanjut ke Catatan & Bukti'));
+      await tester.pumpAndSettle();
 
       // Ambil foto nota PO (wajib jika Ada Order)
       await tester.ensureVisible(find.text('Wajib: Ambil / Unggah Foto Nota PO'));

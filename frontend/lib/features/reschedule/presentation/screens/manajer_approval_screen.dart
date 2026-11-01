@@ -77,7 +77,7 @@ class ManajerApprovalScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 2),
             const Text(
-              'Persetujuan perubahan jadwal rute sales',
+              'Satu aksi per pengajuan · Persetujuan perubahan jadwal rute sales',
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.textSecondary,
