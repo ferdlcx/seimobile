@@ -11,14 +11,19 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/pilih_peran_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/kondite/presentation/screens/kondite_saya_screen.dart';
+import '../../features/kondite/presentation/screens/lembar_cetak_kondite_screen.dart';
+import '../../features/kondite/presentation/screens/manajer_kondite_screen.dart';
 import '../../features/kunjungan/presentation/screens/detail_toko_screen.dart';
 import '../../features/kunjungan/presentation/screens/sales_kunjungan_screen.dart';
 import '../../features/kunjungan/presentation/screens/wizard_jurnal_screen.dart';
 import '../../features/laporan/presentation/screens/admin_laporan_screen.dart';
 import '../../features/laporan/presentation/screens/hasil_rekap_screen.dart';
+import '../../features/laporan/presentation/screens/manajer_laporan_screen.dart';
 import '../../features/mapping/presentation/screens/admin_mapping_screen.dart';
 import '../../features/mapping/presentation/screens/sales_mapping_screen.dart';
+import '../../features/monitoring/presentation/screens/manajer_beranda_screen.dart';
 import '../../features/reschedule/presentation/screens/form_reschedule_screen.dart';
+import '../../features/reschedule/presentation/screens/manajer_approval_screen.dart';
 import '../../features/reschedule/presentation/screens/sales_reschedule_screen.dart';
 import '../config/app_config.dart';
 import '../theme/app_theme.dart';
@@ -215,6 +220,32 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/sales/kondite',
         builder: (context, state) => const KonditeSayaScreen(),
+      ),
+
+      // Modul Manajer Sales
+      GoRoute(
+        path: '/manajer/beranda',
+        builder: (context, state) => const ManajerBerandaScreen(),
+      ),
+      GoRoute(
+        path: '/manajer/reschedule',
+        builder: (context, state) => const ManajerApprovalScreen(),
+      ),
+      GoRoute(
+        path: '/manajer/kondite',
+        builder: (context, state) => const ManajerKonditeScreen(),
+      ),
+      GoRoute(
+        path: '/manajer/kondite/cetak',
+        builder: (context, state) => const LembarCetakKonditeScreen(),
+      ),
+      GoRoute(
+        path: '/manajer/laporan',
+        builder: (context, state) => const ManajerLaporanScreen(),
+      ),
+      GoRoute(
+        path: '/manajer/laporan/hasil-rekap',
+        builder: (context, state) => const HasilRekapScreen(),
       ),
 
       // Placeholder Fallback

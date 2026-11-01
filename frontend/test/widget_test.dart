@@ -196,9 +196,11 @@ void main() {
       expect(find.text('Langsung masuk ke Beranda'), findsOneWidget);
 
       await tester.tap(find.text('Langsung masuk ke Beranda'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Placeholder Manajer Sales · Menu BERANDA'), findsOneWidget);
+      expect(find.text('Monitoring Sales'), findsOneWidget);
     });
   });
 
@@ -516,6 +518,155 @@ void main() {
       );
       await tester.scrollUntilVisible(catatanFinder, 300);
       expect(catatanFinder, findsOneWidget);
+    });
+  });
+
+  group('Tahap 5 - Manajer Sales (Beranda, Approval, Kondite 18 Kriteria, Cetak PDF, Laporan)', () {
+    Future<void> loginAsManajer(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 3500);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: SeuiCentreApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 2000));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Manajer Sales'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Masuk'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Langsung masuk ke Beranda'), findsOneWidget);
+      await tester.tap(find.text('Langsung masuk ke Beranda'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Manajer Beranda: metrik ringkasan & beralih ke Mode Sales', (tester) async {
+      await loginAsManajer(tester);
+
+      expect(find.text('Monitoring Sales'), findsOneWidget);
+      expect(find.text('Kunjungan'), findsOneWidget);
+      expect(find.text('Order'), findsOneWidget);
+      expect(find.text('Reschedule'), findsAtLeastNWidgets(1));
+      expect(find.text('Mode Sales'), findsOneWidget);
+
+      // Beralih ke Mode Sales tanpa login ulang
+      await tester.tap(find.text('Mode Sales'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      // Sekarang berada di layar Mapping Sales
+      expect(find.text('Mapping hari ini'), findsOneWidget);
+    });
+
+    testWidgets('Manajer Approval Reschedule: setujui pengajuan reschedule sales', (tester) async {
+      await loginAsManajer(tester);
+
+      // Pindah ke tab Reschedule di bottom nav
+      await tester.tap(find.byIcon(Icons.approval_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Approval Reschedule Kunjungan'), findsOneWidget);
+      expect(find.text('Menunggu Persetujuan'), findsOneWidget);
+
+      // Bila ada tombol Setujui, lakukan persetujuan
+      final setujuiFinder = find.widgetWithText(ElevatedButton, 'Setujui');
+      if (setujuiFinder.evaluate().isNotEmpty) {
+        await tester.tap(setujuiFinder.first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Reschedule disetujui. Jadwal sales diperbarui.'), findsOneWidget);
+      }
+    });
+
+    testWidgets('Manajer Penilaian Kondite: form 18 kriteria & hitung nilai akhir dinamis', (tester) async {
+      await loginAsManajer(tester);
+
+      // Pindah ke tab Kondite
+      await tester.tap(find.text('Kondite'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 2000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Penilaian Kondite Sales'), findsOneWidget);
+      expect(find.text('Form Penilaian 18 Kriteria'), findsOneWidget);
+
+      // Tombol Simpan Penilaian Kondite
+      final simpanFinder = find.text('Simpan Penilaian Kondite');
+      await tester.ensureVisible(simpanFinder);
+      expect(simpanFinder, findsOneWidget);
+
+      await tester.tap(simpanFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Penilaian kondite berhasil disimpan.'), findsOneWidget);
+    });
+
+    testWidgets('Manajer Cetak Lembar Kondite: lihat pratinjau dokumen & tanda tangan digital', (tester) async {
+      await loginAsManajer(tester);
+
+      await tester.tap(find.text('Kondite'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 2000));
+      await tester.pumpAndSettle();
+
+      // Tombol Cetak Lembar Kondite (PDF)
+      final cetakPdfFinder = find.text('Cetak Lembar Kondite (PDF)');
+      await tester.ensureVisible(cetakPdfFinder);
+      expect(cetakPdfFinder, findsOneWidget);
+
+      await tester.tap(cetakPdfFinder);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lembar Cetak Kondite'), findsOneWidget);
+      expect(find.text('PT. S.E.U.I CENTRE PURWOKERTO'), findsOneWidget);
+      expect(find.text('LEMBAR PENILAIAN KONDITE SALES'), findsOneWidget);
+      expect(find.text('✓ TTD DIGITAL VALID'), findsOneWidget);
+      expect(find.text('( Maya Kusuma )'), findsOneWidget);
+      expect(find.text('Cetak Dokumen'), findsOneWidget);
+      expect(find.text('Simpan PDF'), findsOneWidget);
+    });
+
+    testWidgets('Manajer Laporan: lihat monitoring & rekap realisasi', (tester) async {
+      await loginAsManajer(tester);
+
+      // Pindah ke tab Laporan
+      await tester.tap(find.text('Laporan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Monitoring & Laporan Sales'), findsOneWidget);
+      expect(find.text('KEPATUHAN JADWAL MAPPING'), findsOneWidget);
+      expect(find.text('Cetak Laporan Rekap'), findsOneWidget);
+
+      // Klik Cetak Laporan Rekap
+      await tester.ensureVisible(find.text('Cetak Laporan Rekap'));
+      await tester.tap(find.text('Cetak Laporan Rekap'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Hasil cetak laporan rekap'), findsOneWidget);
+      expect(find.text('TOTAL'), findsOneWidget);
     });
   });
 }
