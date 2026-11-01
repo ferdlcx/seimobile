@@ -9,6 +9,7 @@ class PrimaryButton extends StatelessWidget {
   final Color? backgroundColor;
   final bool isOutlined;
   final IconData? icon;
+  final double? width;
 
   const PrimaryButton({
     super.key,
@@ -18,6 +19,7 @@ class PrimaryButton extends StatelessWidget {
     this.backgroundColor,
     this.isOutlined = false,
     this.icon,
+    this.width,
   });
 
   @override
@@ -27,7 +29,7 @@ class PrimaryButton extends StatelessWidget {
 
     if (isOutlined) {
       return SizedBox(
-        width: double.infinity,
+        width: width ?? double.infinity,
         height: 46,
         child: OutlinedButton(
           onPressed: canPress ? onPressed : null,
@@ -47,7 +49,7 @@ class PrimaryButton extends StatelessWidget {
     }
 
     return SizedBox(
-      width: double.infinity,
+      width: width ?? double.infinity,
       height: 46,
       child: ElevatedButton(
         onPressed: canPress ? onPressed : null,

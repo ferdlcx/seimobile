@@ -95,6 +95,21 @@ class AppFormat {
     return '${_bulanLengkap[date.month]} ${date.year}';
   }
 
+  /// Format periode string `YYYY-MM` menjadi `Oktober 2026`.
+  static String formatPeriodeBulanString(String yyyyMm) {
+    try {
+      final parts = yyyyMm.split('-');
+      if (parts.length >= 2) {
+        final year = int.parse(parts[0]);
+        final month = int.parse(parts[1]);
+        if (month >= 1 && month <= 12) {
+          return '${_bulanLengkap[month]} $year';
+        }
+      }
+    } catch (_) {}
+    return yyyyMm;
+  }
+
   /// Format angka desimal 1 digit (misal 88.9).
   static String formatSatuDesimal(double val) {
     return val.toStringAsFixed(1);

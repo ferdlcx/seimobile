@@ -138,10 +138,12 @@ void main() {
 
       // Klik tombol untuk masuk ke mapping
       await tester.tap(find.text('Langsung masuk ke Menu Mapping'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
       // Berada di layar Mapping Sales
-      expect(find.text('Placeholder Sales · Menu MAPPING'), findsOneWidget);
+      expect(find.text('Mapping hari ini'), findsOneWidget);
     });
 
     testWidgets('Login akun nonaktif menampilkan pesan error', (tester) async {
@@ -337,6 +339,183 @@ void main() {
       expect(find.text('TOTAL'), findsOneWidget);
       expect(find.text('Cetak'), findsOneWidget);
       expect(find.text('Simpan PDF'), findsOneWidget);
+    });
+  });
+
+  group('Tahap 4 - Sales (Mapping, Kunjungan, Reschedule, Kondite)', () {
+    Future<void> loginAsSales(WidgetTester tester) async {
+      tester.view.physicalSize = const Size(800, 2000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: SeuiCentreApp(),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 2000));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Sales'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Masuk'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Langsung masuk ke Menu Mapping'), findsOneWidget);
+      await tester.tap(find.text('Langsung masuk ke Menu Mapping'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Sales Mapping: lihat progress rute dan klik Mulai Check-in', (tester) async {
+      await loginAsSales(tester);
+
+      expect(find.text('Mapping hari ini'), findsOneWidget);
+      expect(find.text('PROGRESS RUTE HARI INI'), findsOneWidget);
+      expect(find.text('Toko Makmur Jaya'), findsOneWidget);
+
+      // Klik tombol Mulai Check-in
+      await tester.ensureVisible(find.text('Mulai Check-in'));
+      await tester.tap(find.text('Mulai Check-in'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      // Berpindah ke layar Kunjungan
+      expect(find.text('Progress Rute Kunjungan'), findsOneWidget);
+    });
+
+    testWidgets('Sales Kunjungan: list toko, detail toko & simulasi radius GPS', (tester) async {
+      await loginAsSales(tester);
+
+      // Pindah ke tab Kunjungan
+      await tester.tap(find.text('Kunjungan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Progress Rute Kunjungan'), findsOneWidget);
+      expect(find.text('Toko Makmur Jaya'), findsOneWidget);
+
+      // Tap Toko Makmur Jaya untuk masuk ke Detail
+      await tester.tap(find.text('Toko Makmur Jaya'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Detail Toko & Check-in'), findsOneWidget);
+      expect(find.text('DALAM RADIUS CHECK-IN'), findsOneWidget);
+
+      // Tes tombol simulasi di luar radius (550 m)
+      await tester.tap(find.text('Simulasi Jauh (550 m)'));
+      await tester.pumpAndSettle();
+      expect(find.text('DI LUAR RADIUS CHECK-IN'), findsOneWidget);
+
+      // Kembalikan ke simulasi dekat (12 m)
+      await tester.tap(find.text('Simulasi Dekat (12 m)'));
+      await tester.pumpAndSettle();
+      expect(find.text('DALAM RADIUS CHECK-IN'), findsOneWidget);
+    });
+
+    testWidgets('Sales Wizard Jurnal: isi jurnal kunjungan & simpan final', (tester) async {
+      await loginAsSales(tester);
+
+      await tester.tap(find.text('Kunjungan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Toko Makmur Jaya'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      // Klik Check-in di Toko Ini
+      await tester.ensureVisible(find.text('Check-in di Toko Ini'));
+      await tester.tap(find.text('Check-in di Toko Ini'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Jurnal Kunjungan'), findsOneWidget);
+      expect(find.text('HASIL KUNJUNGAN'), findsOneWidget);
+
+      // Ambil foto nota PO (wajib jika Ada Order)
+      await tester.ensureVisible(find.text('Wajib: Ambil / Unggah Foto Nota PO'));
+      await tester.tap(find.text('Wajib: Ambil / Unggah Foto Nota PO'));
+      await tester.pumpAndSettle();
+
+      // Simpan Jurnal Kunjungan Final
+      await tester.ensureVisible(find.text('Simpan Jurnal Kunjungan'));
+      await tester.tap(find.text('Simpan Jurnal Kunjungan'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      // Kembali ke daftar rute kunjungan
+      expect(find.text('Progress Rute Kunjungan'), findsOneWidget);
+    });
+
+    testWidgets('Sales Reschedule: buat pengajuan reschedule baru', (tester) async {
+      await loginAsSales(tester);
+
+      // Pindah ke tab Reschedule
+      await tester.tap(find.text('Reschedule'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Daftar Pengajuan Reschedule'), findsOneWidget);
+
+      // Klik + Pengajuan Baru
+      await tester.tap(find.text('+ Pengajuan Baru'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Buat Pengajuan Reschedule'), findsOneWidget);
+
+      // Masukkan alasan
+      await tester.enterText(
+        find.byType(TextFormField).last,
+        'Pemilik toko sedang di luar kota hingga lusa.',
+      );
+      await tester.pumpAndSettle();
+
+      // Klik Ajukan Reschedule
+      await tester.ensureVisible(find.text('Ajukan Reschedule'));
+      await tester.tap(find.text('Ajukan Reschedule'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      // Kembali ke daftar pengajuan
+      expect(find.text('Daftar Pengajuan Reschedule'), findsOneWidget);
+      expect(find.textContaining('Pemilik toko sedang di luar kota hingga lusa.'), findsOneWidget);
+    });
+
+    testWidgets('Sales Kondite Saya: tampilkan lembar 18 kriteria read-only', (tester) async {
+      await loginAsSales(tester);
+
+      // Pindah ke tab Kondite
+      await tester.tap(find.text('Kondite'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Lembar Kondite Sales'), findsOneWidget);
+      expect(find.text('NILAI KONDITE BULAN INI'), findsOneWidget);
+      expect(find.text('Rincian 18 Kriteria Penilaian'), findsOneWidget);
+
+      final catatanFinder = find.text(
+        'Tidak ada tombol ubah di layar ini. Form kondite dinilai berkala oleh Manajer Sales.',
+      );
+      await tester.scrollUntilVisible(catatanFinder, 300);
+      expect(catatanFinder, findsOneWidget);
     });
   });
 }

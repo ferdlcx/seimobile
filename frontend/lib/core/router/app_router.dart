@@ -10,9 +10,16 @@ import '../../features/auth/presentation/screens/login_berhasil_screen.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/pilih_peran_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/kondite/presentation/screens/kondite_saya_screen.dart';
+import '../../features/kunjungan/presentation/screens/detail_toko_screen.dart';
+import '../../features/kunjungan/presentation/screens/sales_kunjungan_screen.dart';
+import '../../features/kunjungan/presentation/screens/wizard_jurnal_screen.dart';
 import '../../features/laporan/presentation/screens/admin_laporan_screen.dart';
 import '../../features/laporan/presentation/screens/hasil_rekap_screen.dart';
 import '../../features/mapping/presentation/screens/admin_mapping_screen.dart';
+import '../../features/mapping/presentation/screens/sales_mapping_screen.dart';
+import '../../features/reschedule/presentation/screens/form_reschedule_screen.dart';
+import '../../features/reschedule/presentation/screens/sales_reschedule_screen.dart';
 import '../config/app_config.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_scaffold.dart';
@@ -169,6 +176,45 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/admin/laporan/hasil-rekap',
         builder: (context, state) => const HasilRekapScreen(),
+      ),
+
+      // Modul Sales
+      GoRoute(
+        path: '/sales/mapping',
+        builder: (context, state) => const SalesMappingScreen(),
+      ),
+      GoRoute(
+        path: '/sales/kunjungan',
+        builder: (context, state) => const SalesKunjunganScreen(),
+      ),
+      GoRoute(
+        path: '/sales/kunjungan/detail/:noJo',
+        builder: (context, state) {
+          final noJo = state.pathParameters['noJo'] ?? '';
+          return DetailTokoScreen(noJo: noJo);
+        },
+      ),
+      GoRoute(
+        path: '/sales/kunjungan/wizard/:noJo',
+        builder: (context, state) {
+          final noJo = state.pathParameters['noJo'] ?? '';
+          return WizardJurnalScreen(noJo: noJo);
+        },
+      ),
+      GoRoute(
+        path: '/sales/reschedule',
+        builder: (context, state) => const SalesRescheduleScreen(),
+      ),
+      GoRoute(
+        path: '/sales/reschedule/tambah',
+        builder: (context, state) {
+          final noJo = state.uri.queryParameters['noJo'];
+          return FormRescheduleScreen(initialNoJo: noJo);
+        },
+      ),
+      GoRoute(
+        path: '/sales/kondite',
+        builder: (context, state) => const KonditeSayaScreen(),
       ),
 
       // Placeholder Fallback
