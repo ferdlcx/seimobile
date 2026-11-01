@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/utils/format.dart';
+import '../../../../core/utils/pdf_generator.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/state_view.dart';
@@ -197,12 +199,14 @@ class HasilRekapScreen extends ConsumerWidget {
                         label: 'Cetak',
                         isOutlined: true,
                         backgroundColor: accentColor,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Menyiapkan printer dokumen rekap...'),
-                              duration: Duration(seconds: 2),
-                            ),
+                        onPressed: () async {
+                          await PdfGenerator.cetakLaporanRekap(
+                            rekapList: rekap.barisWilayah,
+                            totalTarget: rekap.totalTarget,
+                            totalReal: rekap.totalReal,
+                            totalPersen: rekap.totalPersen,
+                            periode: rekap.periodeLabel,
+                            waktuCetak: AppFormat.formatTanggalWaktu(rekap.waktuCetak),
                           );
                         },
                       ),
@@ -212,12 +216,14 @@ class HasilRekapScreen extends ConsumerWidget {
                       child: PrimaryButton(
                         label: 'Simpan PDF',
                         backgroundColor: accentColor,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Dokumen PDF berhasil disimpan.'),
-                              duration: Duration(seconds: 2),
-                            ),
+                        onPressed: () async {
+                          await PdfGenerator.cetakLaporanRekap(
+                            rekapList: rekap.barisWilayah,
+                            totalTarget: rekap.totalTarget,
+                            totalReal: rekap.totalReal,
+                            totalPersen: rekap.totalPersen,
+                            periode: rekap.periodeLabel,
+                            waktuCetak: AppFormat.formatTanggalWaktu(rekap.waktuCetak),
                           );
                         },
                       ),

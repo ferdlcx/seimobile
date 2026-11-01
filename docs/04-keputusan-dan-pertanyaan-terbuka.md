@@ -23,3 +23,4 @@
 - Backend Laravel menggunakan model `App\Models\Pengguna` (tabel `pengguna`) yang terintegrasi dengan Laravel Sanctum, dengan `App\Models\User` sebagai alias/subclass agar kompatibel dengan sistem default.
 - Format respon standar `{ data: ..., meta?: ... }` dan penanganan exception JSON Bahasa Indonesia dikonfigurasi secara global pada `bootstrap/app.php` dan `App\Support\ApiResponse`.
 - Parameter bisnis sistem (`radius_checkin_m`, `hari_belum_dikunjungi`, `bobot_nilai`, `label_nilai`, `enable_reschedule`, `max_foto_kb`) dipusatkan di `config/seui.php`.
+- Pembuatan dan pencetakan dokumen PDF resmi (Lembar Kondite Sales dan Laporan Rekap Kunjungan Toko per Wilayah) menggunakan generator berbasis `pdf` dan `printing` (`PdfGenerator`), menghasilkan layout format A4 dengan Kop Resmi PT. S.E.U.I CENTRE Purwokerto dan tanda tangan digital valid.

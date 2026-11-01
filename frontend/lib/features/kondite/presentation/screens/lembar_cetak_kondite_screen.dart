@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format.dart';
+import '../../../../core/utils/pdf_generator.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../providers/manajer_kondite_provider.dart';
@@ -337,11 +338,17 @@ class LembarCetakKonditeScreen extends ConsumerWidget {
                   label: 'Cetak Dokumen',
                   icon: Icons.print_outlined,
                   backgroundColor: AppColors.manajerBlue,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Mengirim perintah cetak ke printer...'),
-                      ),
+                  onPressed: () async {
+                    await PdfGenerator.cetakLembarKondite(
+                      salesNama: salesNama,
+                      salesId: salesId,
+                      periode: periodeStr,
+                      nilaiAkhir: state.nilaiAkhir,
+                      label: state.label,
+                      kriteriaList: state.kriteriaList,
+                      detailNilai: state.detailNilai,
+                      bobotNilai: config.bobotNilai,
+                      tanggalCetak: tanggalCetak,
                     );
                   },
                 ),
@@ -353,11 +360,17 @@ class LembarCetakKonditeScreen extends ConsumerWidget {
                   icon: Icons.download_outlined,
                   isOutlined: true,
                   backgroundColor: AppColors.manajerBlue,
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Dokumen lembar kondite berhasil disimpan sebagai PDF.'),
-                      ),
+                  onPressed: () async {
+                    await PdfGenerator.cetakLembarKondite(
+                      salesNama: salesNama,
+                      salesId: salesId,
+                      periode: periodeStr,
+                      nilaiAkhir: state.nilaiAkhir,
+                      label: state.label,
+                      kriteriaList: state.kriteriaList,
+                      detailNilai: state.detailNilai,
+                      bobotNilai: config.bobotNilai,
+                      tanggalCetak: tanggalCetak,
                     );
                   },
                 ),
