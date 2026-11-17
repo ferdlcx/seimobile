@@ -43,6 +43,16 @@ void main() {
       final monitoring1 = SqliteMonitoringRepository(db1);
       final laporan1 = SqliteLaporanRepository(db1);
 
+      // Login Manajer & simpan tanda tangan digital ke SQLite
+      final manajerSession = await auth1.login(
+        username: 'maya.kusuma',
+        password: 'password123',
+        role: 'manajer_sales',
+      );
+      expect(manajerSession.mode, equals('manajer'));
+      await auth1.simpanTandaTangan('ttd-maya-valid');
+      await auth1.logout();
+
       // Verifikasi seed awal (4/6 toko dikunjungi)
       final hariIniAwal = await mapping1.hariIni();
       expect(hariIniAwal.totalTarget, equals(6));
