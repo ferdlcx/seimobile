@@ -37,6 +37,11 @@ jobs:
           cd frontend
           flutter pub get
 
+      - name: Analyze Code
+        run: |
+          cd frontend
+          flutter analyze
+
       - name: Run Tests
         run: |
           cd frontend
@@ -58,14 +63,15 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: S.E.U.I Centre v1.0.0
+          tag_name: v1.1.0
+          name: S.E.U.I Centre v1.1.0
           body: |
-            ## S.E.U.I Centre Mobile - Release v1.0.0
-            Aplikasi Sistem Informasi Mapping, Aktivitas, dan Kondite Sales.
+            ## S.E.U.I Centre Mobile - Release v1.1.0
+            Aplikasi murni Dart & Flutter dengan database SQLite lokal persisten (`seui_centre.db`).
 
             ### Fitur Utama:
-            - **Admin Tagihan**: Akun & Hak Akses, Master Data (Toko, Sales, Wilayah, Kriteria), Susun Mapping Grid Excel (12 Bulan), Laporan Rekap & Cetak PDF.
+            - **Database SQLite Nyata (Pure Dart/Flutter)**: Seluruh data akun, toko, mapping 12 bulan, jurnal kunjungan + foto, reschedule/approval, serta penilaian kondite 18 kriteria tersimpan permanen di perangkat tanpa membutuhkan server PHP.
+            - **Admin Tagihan**: Akun & Hak Akses, Master Data (Toko, Sales, Wilayah, Kriteria), Susun Mapping Grid GitHub-style (12 Bulan), Laporan Rekap & Cetak PDF.
             - **Sales**: Mapping Hari Ini, GPS Check-in Radius 50m, Wizard Jurnal Kunjungan (Ada Order / Tidak Ada Order / Toko Tutup + Foto PO & Display), Pengajuan Reschedule, Lembar Kondite Saya (18 Kriteria Read-only).
             - **Manajer Sales**: Monitoring Beranda (Kunjungan, Order, Reschedule), Mode Sales Merangkap, Approval Reschedule, Penilaian Kondite 18 Kriteria Dinamis & Cetak Dokumen Resmi PDF ber-TTD Digital.
 

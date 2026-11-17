@@ -117,7 +117,7 @@ class MockDatabase {
         lat: -7.4562,
         lng: 109.2865,
         sudahDikunjungiBulanIni: false,
-        hariSejakKunjunganTerakhir: 32,
+        hariSejakKunjunganTerakhir: 20,
       ),
       Toko(
         noJo: 'JO-0375',
@@ -176,11 +176,23 @@ class MockDatabase {
     ];
 
     // Mapping tahun 2026 untuk Budi Santoso (salesId = 2)
+    // Pola 12 bulan (Jan–Des) dibuat bervariasi menyerupai GitHub matrix di mockup,
+    // dengan bulan berjalan (Oktober / indeks 9) tetap direncanakan agar rute 4/6 konsisten.
+    const polaBulan = <List<bool>>[
+      [false, true, true, false, true, true, false, true, true, true, true, true],
+      [true, true, false, true, true, false, true, true, false, true, true, false],
+      [true, false, true, true, false, true, true, false, true, true, false, true],
+      [false, true, true, false, true, true, false, true, true, true, true, true],
+      [true, true, false, true, true, false, true, true, false, true, true, false],
+      [true, false, true, true, false, true, true, false, true, true, false, true],
+    ];
+
     mappingList = List<MappingToko>.generate(tokoList.length, (i) {
       final t = tokoList[i];
-      final rencana = List<bool>.filled(12, true);
+      final rencana = List<bool>.from(polaBulan[i % polaBulan.length]);
       final realisasi = List<bool>.generate(12, (m) {
-        if (m < 9) return true; // Jan-Sep terealisasi
+        if (!rencana[m]) return false;
+        if (m < 9) return true; // Jan-Sep terealisasi sesuai rencana
         if (m == 9) return t.sudahDikunjungiBulanIni; // Okt (indeks 9)
         return false;
       });
@@ -270,7 +282,7 @@ class MockDatabase {
         namaToko: 'Toko Bintang Terang',
         jadwalLama: DateTime(2026, 10, 30),
         jadwalBaru: DateTime(2026, 11, 4),
-        alasan: 'Jadwal bentrok dengan rute Sokaraja.',
+        alasan: 'Jadwal bentrok dengan rute.',
         status: 'menunggu',
         salesNama: 'Budi Santoso',
         salesId: 2,

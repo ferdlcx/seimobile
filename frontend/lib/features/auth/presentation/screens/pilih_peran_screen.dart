@@ -12,17 +12,18 @@ class PilihPeranScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppScaffold(
       roleLabel: 'Masuk',
-      menuTitle: 'Pilih Peran',
+      menuTitle: 'Pilih peran',
+      customSubtitle: 'Pilih peran',
       accentColor: AppColors.navyHeader,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Masuk ke S.E.U.I Centre',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
@@ -31,11 +32,11 @@ class PilihPeranScreen extends StatelessWidget {
             const Text(
               'Pilih peran Anda untuk melanjutkan.',
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 11.5,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Kartu 1: Admin Tagihan (Teal)
             _PeranCard(
@@ -93,7 +94,7 @@ class _PeranCard extends StatelessWidget {
         splashColor: Colors.white24,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -101,17 +102,16 @@ class _PeranCard extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w800,
-                  letterSpacing: 0.3,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 3),
               Text(
                 subtitle,
                 style: const TextStyle(
-                  color: Color(0xFFF1F5F9),
-                  fontSize: 12,
+                  color: Color(0xFFE2E8F0),
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w400,
                 ),
               ),

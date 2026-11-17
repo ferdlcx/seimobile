@@ -3,18 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/format.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/state_view.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/kondite_saya_provider.dart';
 
-class KonditeSayaScreen extends ConsumerWidget {
+/// Layar Kondite Saya (Read-only) untuk peran Sales.
+class KonditeSayaScreen extends ConsumerStatefulWidget {
   const KonditeSayaScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<KonditeSayaScreen> createState() => _KonditeSayaScreenState();
+}
+
+class _KonditeSayaScreenState extends ConsumerState<KonditeSayaScreen> {
+  bool _showAllKriteria = false;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(konditeSayaProvider);
     final auth = ref.watch(authProvider);
     final config = ref.watch(appConfigProvider);
@@ -46,6 +53,9 @@ class KonditeSayaScreen extends ConsumerWidget {
     final salesNama = auth.session?.user.nama ?? 'Budi Santoso';
     final penilaian = state.penilaian;
     final kriteriaList = state.kriteriaList;
+    final visibleKriteria = _showAllKriteria
+        ? kriteriaList
+        : kriteriaList.take(6).toList();
 
     return AppScaffold(
       roleLabel: 'Sales',
@@ -66,177 +76,99 @@ class KonditeSayaScreen extends ConsumerWidget {
         onRetry: () =>
             ref.read(konditeSayaProvider.notifier).loadKonditeSaya(),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
-            // Banner Info Desain PNG
-            Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Sales hanya bisa melihat nilai. Penilaian dilakukan manajer.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
             const Text(
-              'Lembar Kondite Sales',
+              'Kondite saya',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              'Sales: $salesNama · Penilaian oleh Manajer Sales',
-              style: const TextStyle(
-                fontSize: 12,
+            const SizedBox(height: 4),
+            const Text(
+              'Sales hanya bisa melihat nilai. Penilaian dilakukan manajer.',
+              style: TextStyle(
+                fontSize: 11.5,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-            // Kartu Nilai Akhir
+            // Kartu Nilai Bulan Ini (Navy rata kiri)
             if (penilaian != null)
               Container(
-                padding: const EdgeInsets.all(18),
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.navyHeader, Color(0xFF1E293B)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  color: AppColors.navyHeader,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'NILAI KONDITE BULAN INI',
-                          style: TextStyle(
-                            fontSize: 11,
-                            letterSpacing: 1.1,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        Text(
-                          AppFormat.formatPeriodeBulanString(penilaian.periode),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text(
-                          penilaian.nilaiAkhir.toStringAsFixed(1),
-                          style: const TextStyle(
-                            fontSize: 44,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '/ 100',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.salesOrange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        penilaian.label,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Status: Terverifikasi · Read-only',
+                    const Text(
+                      'NILAI BULAN INI · OKT 2026',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 10,
+                        letterSpacing: 0.6,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF94A3B8),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      penilaian.nilaiAkhir.toStringAsFixed(1),
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${penilaian.label} · $salesNama',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Color(0xFFCBD5E1),
                       ),
                     ),
                   ],
                 ),
               ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 14),
 
-            const Row(
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.format_list_numbered,
-                  size: 18,
-                  color: AppColors.textPrimary,
-                ),
-                SizedBox(width: 6),
-                Text(
-                  'Rincian 18 Kriteria Penilaian',
+                const Text(
+                  '18 KRITERIA (6 TERATAS)',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textSecondary,
+                    letterSpacing: 0.4,
                   ),
                 ),
+                if (kriteriaList.length > 6)
+                  InkWell(
+                    onTap: () =>
+                        setState(() => _showAllKriteria = !_showAllKriteria),
+                    child: Text(
+                      _showAllKriteria ? 'Tampilkan 6 teratas' : 'Lihat semua',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.salesOrange,
+                      ),
+                    ),
+                  ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
             if (kriteriaList.isEmpty)
               const Center(
@@ -246,13 +178,13 @@ class KonditeSayaScreen extends ConsumerWidget {
                 ),
               )
             else
-              ...kriteriaList.map((kriteria) {
+              ...visibleKriteria.map((kriteria) {
                 final kodeNilai = penilaian?.detail[kriteria.id] ?? 'B';
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 12,
+                    vertical: 11,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -261,29 +193,11 @@ class KonditeSayaScreen extends ConsumerWidget {
                   ),
                   child: Row(
                     children: [
-                      Container(
-                        width: 24,
-                        height: 24,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${kriteria.urutan}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           kriteria.nama,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
                           ),
@@ -296,36 +210,15 @@ class KonditeSayaScreen extends ConsumerWidget {
                 );
               }),
 
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 18,
-                    color: AppColors.textSecondary,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Tidak ada tombol ubah di layar ini. Form kondite dinilai berkala oleh Manajer Sales.',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 4),
+            const Text(
+              'Tidak ada tombol ubah di layar ini.',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
           ],
         ),
       ),

@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/pill_filter_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/akun_provider.dart';
 
 /// Layar Tambah Akun Baru oleh Admin Tagihan.
@@ -16,9 +18,9 @@ class TambahAkunScreen extends ConsumerStatefulWidget {
 
 class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _namaController = TextEditingController(text: 'Rudi Hartono');
-  final _usernameController = TextEditingController(text: 'rudi.hartono');
-  final _passwordController = TextEditingController(text: 'password123');
+  final _namaController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
   String _selectedRole = 'sales'; // 'sales' | 'manajer_sales'
   bool _aktif = true;
 
@@ -50,12 +52,44 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(akunProvider);
 
+    const navItems = [
+      RoleNavItem(
+        label: 'Akun',
+        icon: Icons.people_outline,
+        route: '/admin/akun',
+      ),
+      RoleNavItem(
+        label: 'Data',
+        icon: Icons.storage_outlined,
+        route: '/admin/data',
+      ),
+      RoleNavItem(
+        label: 'Mapping',
+        icon: Icons.grid_on_outlined,
+        route: '/admin/mapping',
+      ),
+      RoleNavItem(
+        label: 'Laporan',
+        icon: Icons.assessment_outlined,
+        route: '/admin/laporan',
+      ),
+    ];
+
     return AppScaffold(
       roleLabel: 'Admin Tagihan',
-      menuTitle: 'Tambah Akun',
+      menuTitle: 'Akun',
       accentColor: AppColors.adminTeal,
+      navItems: navItems,
+      currentNavIndex: 0,
+      onNavTap: (idx) => context.go(navItems[idx].route),
+      onLogout: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (context.mounted) {
+          context.go('/pilih-peran');
+        }
+      },
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Form(
           key: _formKey,
           child: Column(
@@ -72,14 +106,14 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                     children: [
                       Icon(
                         Icons.chevron_left_rounded,
-                        size: 20,
-                        color: Color(0xFF2563EB),
+                        size: 18,
+                        color: AppColors.adminTeal,
                       ),
                       Text(
                         'Daftar akun',
                         style: TextStyle(
-                          color: Color(0xFF2563EB),
-                          fontSize: 13,
+                          color: AppColors.adminTeal,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -87,17 +121,17 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               const Text(
                 'Tambah Akun Baru',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               if (state.errorMessage != null) ...[
                 Container(
@@ -118,20 +152,25 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
               ],
 
               // Nama lengkap
               const Text(
                 'Nama lengkap',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               TextFormField(
                 controller: _namaController,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
                 decoration: const InputDecoration(
                   hintText: 'contoh: Rudi Hartono',
                 ),
@@ -142,19 +181,24 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               // Username
               const Text(
                 'Username',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               TextFormField(
                 controller: _usernameController,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
                 decoration: const InputDecoration(
                   hintText: 'contoh: rudi.hartono',
                 ),
@@ -165,20 +209,25 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               // Password
               const Text(
                 'Password',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               TextFormField(
                 controller: _passwordController,
                 obscureText: true,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
                 decoration: const InputDecoration(
                   hintText: 'minimal 6 karakter',
                 ),
@@ -192,71 +241,76 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              // Peran
+              // Peran (Pill chips)
               const Text(
                 'Peran',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 8),
-              Row(
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
                 children: [
-                  ChoiceChip(
-                    label: const Text('Sales'),
+                  PillChip(
+                    label: 'Sales',
                     selected: _selectedRole == 'sales',
-                    selectedColor: AppColors.adminTeal,
-                    labelStyle: TextStyle(
-                      color: _selectedRole == 'sales'
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (val) {
-                      if (val) setState(() => _selectedRole = 'sales');
-                    },
+                    activeColor: AppColors.adminTeal,
+                    onTap: () => setState(() => _selectedRole = 'sales'),
                   ),
-                  const SizedBox(width: 10),
-                  ChoiceChip(
-                    label: const Text('Manajer Sales'),
+                  PillChip(
+                    label: 'Manajer Sales',
                     selected: _selectedRole == 'manajer_sales',
-                    selectedColor: AppColors.adminTeal,
-                    labelStyle: TextStyle(
-                      color: _selectedRole == 'manajer_sales'
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (val) {
-                      if (val) setState(() => _selectedRole = 'manajer_sales');
-                    },
+                    activeColor: AppColors.adminTeal,
+                    onTap: () => setState(() => _selectedRole = 'manajer_sales'),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Status akun aktif
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Status akun aktif',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+              // Status akun aktif di dalam card putih
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Status akun aktif',
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
-                  ),
-                  Switch(
-                    value: _aktif,
-                    activeTrackColor: AppColors.adminTeal,
-                    onChanged: (val) => setState(() => _aktif = val),
-                  ),
-                ],
+                    Transform.scale(
+                      scale: 0.85,
+                      child: Switch(
+                        value: _aktif,
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: AppColors.adminTeal,
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: AppColors.border,
+                        trackOutlineColor:
+                            WidgetStateProperty.all(Colors.transparent),
+                        onChanged: (val) => setState(() => _aktif = val),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
 
               // Tombol Batal & Simpan
               Row(
@@ -264,12 +318,11 @@ class _TambahAkunScreenState extends ConsumerState<TambahAkunScreen> {
                   Expanded(
                     child: PrimaryButton(
                       label: 'Batal',
-                      isOutlined: true,
-                      backgroundColor: AppColors.adminTeal,
+                      isSoftSecondary: true,
                       onPressed: () => context.go('/admin/akun'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: PrimaryButton(
                       label: 'Simpan Akun',

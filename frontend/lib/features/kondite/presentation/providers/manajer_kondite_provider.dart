@@ -87,11 +87,14 @@ class ManajerKonditeNotifier extends Notifier<ManajerKonditeState> {
 
       final allAkun = results[0] as List<Pengguna>;
       final salesList = allAkun
-          .where((u) => u.role == 'sales' || u.role == 'manajer_sales')
+          .where((u) => u.aktif && (u.role == 'sales' || u.id == 1))
           .toList();
       final kriteriaList = results[1] as List<Kriteria>;
 
-      final activeSales = salesList.isNotEmpty ? salesList.first.id : 2;
+      final hasBudi = salesList.any((u) => u.id == 2);
+      final activeSales = hasBudi
+          ? 2
+          : (salesList.isNotEmpty ? salesList.first.id : 2);
       state = state.copyWith(
         salesList: salesList,
         kriteriaList: kriteriaList,

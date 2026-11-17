@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../core/utils/pdf_generator.dart';
+import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/widgets/status_badge.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/manajer_kondite_provider.dart';
 
+/// Layar Hasil Cetak Lembar Kondite Sales (pratinjau dokumen + tanda tangan digital).
 class LembarCetakKonditeScreen extends ConsumerWidget {
   const LembarCetakKonditeScreen({super.key});
 
@@ -16,403 +19,322 @@ class LembarCetakKonditeScreen extends ConsumerWidget {
     final state = ref.watch(manajerKonditeProvider);
     final config = ref.watch(appConfigProvider);
 
+    final navItems = [
+      const RoleNavItem(
+        label: 'Beranda',
+        icon: Icons.home_outlined,
+        route: '/manajer/beranda',
+      ),
+      if (config.enableReschedule)
+        const RoleNavItem(
+          label: 'Reschedule',
+          icon: Icons.calendar_today_outlined,
+          route: '/manajer/reschedule',
+        ),
+      const RoleNavItem(
+        label: 'Kondite',
+        icon: Icons.star_outline,
+        route: '/manajer/kondite',
+      ),
+      const RoleNavItem(
+        label: 'Laporan',
+        icon: Icons.description_outlined,
+        route: '/manajer/laporan',
+      ),
+    ];
+
     final periodeStr = AppFormat.formatPeriodeBulanString(state.periode);
     final salesNama = state.selectedSales?.nama ?? 'Budi Santoso';
     final salesId = state.selectedSales?.id ?? 2;
-    final tanggalCetak = AppFormat.formatTanggalHari(config.mockToday);
+    final tanggalSingkat = AppFormat.formatTanggalSingkat(config.mockToday);
+    final tanggalCetakPdf = AppFormat.formatTanggalHari(config.mockToday);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navyHeader,
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Lembar Cetak Kondite',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Kertas Dokumen Formal
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+    // 6 kriteria utama ditampilkan ringkas di pratinjau agar proporsional dengan mockup
+    final previewKriteria = state.kriteriaList.take(6).toList();
+
+    return AppScaffold(
+      roleLabel: 'Manajer Sales',
+      menuTitle: 'Kondite',
+      accentColor: AppColors.manajerBlue,
+      navItems: navItems,
+      currentNavIndex: config.enableReschedule ? 2 : 1,
+      onNavTap: (idx) => context.go(navItems[idx].route),
+      onLogout: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (context.mounted) {
+          context.go('/pilih-peran');
+        }
+      },
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Tombol Kembali "< Penilaian"
+            InkWell(
+              onTap: () => context.go('/manajer/kondite'),
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.chevron_left_rounded,
+                      size: 18,
+                      color: AppColors.manajerBlue,
+                    ),
+                    Text(
+                      'Penilaian',
+                      style: TextStyle(
+                        color: AppColors.manajerBlue,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Kop Dokumen
-                Center(
-                  child: Column(
-                    children: [
-                      const Text(
-                        'PT. S.E.U.I CENTRE PURWOKERTO',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: AppColors.navyHeader,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'Distribusi Suku Cadang Motor · Purwokerto, Jawa Tengah',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        height: 2,
-                        color: AppColors.navyHeader,
-                      ),
-                      const SizedBox(height: 2),
-                      Container(
-                        height: 0.8,
-                        color: AppColors.navyHeader,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
+            const SizedBox(height: 8),
 
-                // Judul Dokumen
-                const Center(
-                  child: Text(
-                    'LEMBAR PENILAIAN KONDITE SALES',
+            const Text(
+              'Hasil cetak lembar kondite',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Kartu Dokumen Lembar Kondite
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'S.E.U.I CENTRE · LEMBAR KONDITE',
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w800,
-                      decoration: TextDecoration.underline,
-                      color: AppColors.textPrimary,
+                      color: AppColors.navyHeader,
+                      letterSpacing: 0.3,
                     ),
                   ),
-                ),
-                const SizedBox(height: 14),
-
-                // Metadata Sales & Periode
-                Table(
-                  columnWidths: const {
-                    0: FixedColumnWidth(110),
-                    1: FixedColumnWidth(14),
-                    2: FlexColumnWidth(),
-                  },
-                  children: [
-                    TableRow(
-                      children: [
-                        const Text(
-                          'Nama Sales',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                        const Text(':', style: TextStyle(fontSize: 11)),
-                        Text(
-                          salesNama,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 4),
+                  Text(
+                    '$salesNama · Periode $periodeStr',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
                     ),
-                    TableRow(
-                      children: [
-                        const Text(
-                          'ID / NIK Sales',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                        const Text(':', style: TextStyle(fontSize: 11)),
-                        Text(
-                          'SLS-00$salesId',
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    TableRow(
-                      children: [
-                        const Text(
-                          'Periode Penilaian',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                        const Text(':', style: TextStyle(fontSize: 11)),
-                        Text(
-                          periodeStr,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ],
-                    ),
-                    TableRow(
-                      children: [
-                        const Text(
-                          'Tanggal Cetak',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                        ),
-                        const Text(':', style: TextStyle(fontSize: 11)),
-                        Text(
-                          tanggalCetak,
-                          style: const TextStyle(fontSize: 11),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                // Tabel 18 Kriteria
-                Table(
-                  border: TableBorder.all(
-                    color: AppColors.border,
-                    width: 1,
                   ),
-                  columnWidths: const {
-                    0: FixedColumnWidth(30),
-                    1: FlexColumnWidth(),
-                    2: FixedColumnWidth(45),
-                    3: FixedColumnWidth(45),
-                  },
-                  children: [
-                    TableRow(
-                      decoration: const BoxDecoration(
-                        color: AppColors.background,
-                      ),
-                      children: [
-                        _buildTableHeader('NO'),
-                        _buildTableHeader('KRITERIA PENILAIAN'),
-                        _buildTableHeader('NILAI'),
-                        _buildTableHeader('SKOR'),
-                      ],
-                    ),
-                    ...state.kriteriaList.map((kriteria) {
-                      final nilaiHuruf = state.detailNilai[kriteria.id] ?? 'B';
-                      final bobot = config.bobotNilai[nilaiHuruf] ?? 100;
+                  const SizedBox(height: 12),
 
-                      return TableRow(
-                        children: [
-                          _buildTableCell('${kriteria.urutan}', align: TextAlign.center),
-                          _buildTableCell(kriteria.nama),
-                          Container(
-                            alignment: Alignment.center,
-                            padding: const EdgeInsets.symmetric(vertical: 4),
-                            child: NilaiKonditeBadge(nilai: nilaiHuruf),
-                          ),
-                          _buildTableCell('$bobot', align: TextAlign.center),
-                        ],
-                      );
-                    }),
-                    TableRow(
-                      decoration: BoxDecoration(
-                        color: AppColors.manajerBlue.withValues(alpha: 0.08),
+                  // Tabel 2 Kolom (Kriteria | Nilai) dengan header Navy
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: Table(
+                      border: const TableBorder(
+                        horizontalInside: BorderSide(
+                          color: AppColors.border,
+                          width: 0.8,
+                        ),
+                        bottom: BorderSide(
+                          color: AppColors.border,
+                          width: 0.8,
+                        ),
                       ),
+                      columnWidths: const {
+                        0: FlexColumnWidth(3.4),
+                        1: FlexColumnWidth(1.4),
+                      },
                       children: [
-                        const SizedBox(),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          alignment: Alignment.centerRight,
-                          child: const Text(
-                            'NILAI AKHIR',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.manajerBlue,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          alignment: Alignment.center,
-                          child: Text(
-                            state.label,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.manajerBlue,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          alignment: Alignment.center,
-                          child: Text(
-                            state.nilaiAkhir.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.manajerBlue,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Kolom Tanda Tangan Digital
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Mengetahui (Sales),',
-                          style: TextStyle(fontSize: 11),
-                        ),
-                        const SizedBox(height: 48),
-                        Text(
-                          '( $salesNama )',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        const Text(
-                          'Purwokerto, Tanggal Penilaian',
-                          style: TextStyle(fontSize: 11),
-                        ),
-                        const Text(
-                          'Manajer Sales,',
-                          style: TextStyle(fontSize: 11),
-                        ),
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
+                        const TableRow(
                           decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.manajerBlue),
-                            borderRadius: BorderRadius.circular(4),
+                            color: AppColors.navyHeader,
                           ),
-                          child: const Text(
-                            '✓ TTD DIGITAL VALID',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.manajerBlue,
-                            ),
-                          ),
+                          children: [
+                            _DocCell(text: 'Kriteria', isHeader: true),
+                            _DocCell(text: 'Nilai', isHeader: true),
+                          ],
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
-                          '( Maya Kusuma )',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
+                        ...previewKriteria.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final k = entry.value;
+                          final nilaiHuruf = state.detailNilai[k.id] ?? 'B';
+                          final bgColor = idx.isEven
+                              ? AppColors.softSurface
+                              : Colors.white;
+
+                          return TableRow(
+                            decoration: BoxDecoration(color: bgColor),
+                            children: [
+                              _DocCell(text: k.nama),
+                              _DocCell(text: nilaiHuruf),
+                            ],
+                          );
+                        }),
+                        TableRow(
+                          decoration: const BoxDecoration(
+                            color: AppColors.softSurface,
                           ),
+                          children: [
+                            const _DocCell(text: 'NILAI AKHIR', isBold: true),
+                            _DocCell(
+                              text:
+                                  '${state.nilaiAkhir.toStringAsFixed(1)} · ${state.label}',
+                              isBold: true,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
+                  const SizedBox(height: 12),
+
+                  const Text(
+                    'Tanda tangan digital Manajer Sales',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Goresan Tanda Tangan Digital
+                  SizedBox(
+                    width: 110,
+                    height: 30,
+                    child: CustomPaint(
+                      painter: _SignaturePainter(),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  Text(
+                    'Maya Kusuma · $tanggalSingkat',
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Tombol Cetak (Biru Solid) & Simpan PDF (Soft Secondary)
+            Row(
+              children: [
+                Expanded(
+                  child: PrimaryButton(
+                    label: 'Cetak',
+                    backgroundColor: AppColors.manajerBlue,
+                    onPressed: () async {
+                      await PdfGenerator.cetakLembarKondite(
+                        salesNama: salesNama,
+                        salesId: salesId,
+                        periode: periodeStr,
+                        nilaiAkhir: state.nilaiAkhir,
+                        label: state.label,
+                        kriteriaList: state.kriteriaList,
+                        detailNilai: state.detailNilai,
+                        bobotNilai: config.bobotNilai,
+                        tanggalCetak: tanggalCetakPdf,
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: PrimaryButton(
+                    label: 'Simpan PDF',
+                    isSoftSecondary: true,
+                    onPressed: () async {
+                      await PdfGenerator.cetakLembarKondite(
+                        salesNama: salesNama,
+                        salesId: salesId,
+                        periode: periodeStr,
+                        nilaiAkhir: state.nilaiAkhir,
+                        label: state.label,
+                        kriteriaList: state.kriteriaList,
+                        detailNilai: state.detailNilai,
+                        bobotNilai: config.bobotNilai,
+                        tanggalCetak: tanggalCetakPdf,
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 18),
-
-          // Tombol Cetak & Simpan PDF
-          Row(
-            children: [
-              Expanded(
-                child: PrimaryButton(
-                  label: 'Cetak Dokumen',
-                  icon: Icons.print_outlined,
-                  backgroundColor: AppColors.manajerBlue,
-                  onPressed: () async {
-                    await PdfGenerator.cetakLembarKondite(
-                      salesNama: salesNama,
-                      salesId: salesId,
-                      periode: periodeStr,
-                      nilaiAkhir: state.nilaiAkhir,
-                      label: state.label,
-                      kriteriaList: state.kriteriaList,
-                      detailNilai: state.detailNilai,
-                      bobotNilai: config.bobotNilai,
-                      tanggalCetak: tanggalCetak,
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: PrimaryButton(
-                  label: 'Simpan PDF',
-                  icon: Icons.download_outlined,
-                  isOutlined: true,
-                  backgroundColor: AppColors.manajerBlue,
-                  onPressed: () async {
-                    await PdfGenerator.cetakLembarKondite(
-                      salesNama: salesNama,
-                      salesId: salesId,
-                      periode: periodeStr,
-                      nilaiAkhir: state.nilaiAkhir,
-                      label: state.label,
-                      kriteriaList: state.kriteriaList,
-                      detailNilai: state.detailNilai,
-                      bobotNilai: config.bobotNilai,
-                      tanggalCetak: tanggalCetak,
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTableHeader(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      alignment: Alignment.center,
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          color: AppColors.textPrimary,
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildTableCell(String text, {TextAlign align = TextAlign.left}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
-      alignment: align == TextAlign.center
-          ? Alignment.center
-          : Alignment.centerLeft,
+class _DocCell extends StatelessWidget {
+  final String text;
+  final bool isHeader;
+  final bool isBold;
+
+  const _DocCell({
+    required this.text,
+    this.isHeader = false,
+    this.isBold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7.5),
       child: Text(
         text,
-        textAlign: align,
-        style: const TextStyle(
-          fontSize: 10,
-          color: AppColors.textPrimary,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: isHeader || isBold ? FontWeight.w700 : FontWeight.w500,
+          color: isHeader
+              ? Colors.white
+              : isBold
+                  ? AppColors.textPrimary
+                  : const Color(0xFF334155),
         ),
       ),
     );
   }
+}
+
+class _SignaturePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.navyHeader
+      ..strokeWidth = 1.9
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+
+    final path = Path()
+      ..moveTo(4, 24)
+      ..cubicTo(10, 4, 15, 4, 16, 20)
+      ..cubicTo(18, 28, 25, 10, 32, 12)
+      ..cubicTo(36, 13, 35, 22, 41, 21)
+      ..cubicTo(46, 20, 50, 12, 57, 13)
+      ..cubicTo(66, 14, 78, 17, 96, 18);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/pill_filter_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/state_view.dart';
 import '../../../admin_data/presentation/providers/master_data_provider.dart';
@@ -10,7 +11,7 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/mapping_admin_provider.dart';
 import '../widgets/excel_mapping_grid.dart';
 
-/// Layar Penyusunan Mapping Tahunan oleh Admin Tagihan dengan Grid mirip Excel.
+/// Layar Penyusunan Mapping Tahunan oleh Admin Tagihan dengan Grid bergaya GitHub.
 class AdminMappingScreen extends ConsumerWidget {
   const AdminMappingScreen({super.key});
 
@@ -19,7 +20,7 @@ class AdminMappingScreen extends ConsumerWidget {
     final state = ref.watch(mappingAdminProvider);
     final masterState = ref.watch(masterDataProvider);
 
-    final navItems = const [
+    const navItems = [
       RoleNavItem(
         label: 'Akun',
         icon: Icons.people_outline,
@@ -60,159 +61,100 @@ class AdminMappingScreen extends ConsumerWidget {
         errorMessage: state.errorMessage,
         onRetry: () => ref.read(mappingAdminProvider.notifier).loadMapping(),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Susun mapping toko',
-                style: TextStyle(
-                  fontSize: 18,
+              Text(
+                state.isSavedSuccess
+                    ? 'Mapping berhasil disimpan'
+                    : 'Susun mapping toko',
+                style: const TextStyle(
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                'Sales: Budi Santoso · Tahun 2026. Ketuk kotak untuk menandai bulan kunjungan.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+              if (!state.isSavedSuccess) ...[
+                const Text(
+                  'Sales: Budi Santoso · Tahun 2026. Ketuk kotak untuk menandai bulan kunjungan.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
+                const SizedBox(height: 12),
 
-              // Filter Wilayah
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    ChoiceChip(
-                      label: const Text('Semua'),
-                      selected: state.filterWilayahId == null,
-                      selectedColor: AppColors.adminTeal,
-                      labelStyle: TextStyle(
-                        color: state.filterWilayahId == null
-                            ? Colors.white
-                            : AppColors.textPrimary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      onSelected: (val) {
-                        if (val) {
-                          ref
-                              .read(mappingAdminProvider.notifier)
-                              .filterWilayah(null);
-                        }
-                      },
+                // Filter Wilayah (2 baris pill)
+                WilayahFilterBar(
+                  wilayahList: masterState.wilayahList,
+                  selectedWilayahId: state.filterWilayahId,
+                  activeColor: AppColors.adminTeal,
+                  onSelected: (wilayahId) {
+                    ref
+                        .read(mappingAdminProvider.notifier)
+                        .filterWilayah(wilayahId);
+                  },
+                ),
+                const SizedBox(height: 12),
+              ] else ...[
+                const SizedBox(height: 8),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.successBannerBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Mapping tersimpan. Sales melihatnya di menu Mapping.',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.successBannerText,
+                      fontWeight: FontWeight.w500,
                     ),
-                    const SizedBox(width: 8),
-                    ...masterState.wilayahList.map((w) {
-                      final isSelected = state.filterWilayahId == w.id;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(w.nama),
-                          selected: isSelected,
-                          selectedColor: AppColors.adminTeal,
-                          labelStyle: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : AppColors.textPrimary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          onSelected: (val) {
-                            ref
-                                .read(mappingAdminProvider.notifier)
-                                .filterWilayah(val ? w.id : null);
-                          },
-                        ),
-                      );
-                    }),
-                  ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 14),
+                const SizedBox(height: 12),
+              ],
 
-              // Grid Excel
+              // Grid GitHub 12 Bulan
               ExcelMappingGrid(
                 items: state.items,
                 onToggleCell: (r, c) {
                   ref.read(mappingAdminProvider.notifier).toggleCell(r, c);
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Banner Berhasil Simpan
               if (state.isSavedSuccess) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.successBannerBg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.successBannerBorder),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: AppColors.successBannerText,
-                            size: 18,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'Mapping berhasil disimpan',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.successBannerText,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Mapping tersimpan. Sales melihatnya di menu Mapping.',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.successBannerText,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Disimpan 30 Okt 2026, 10:24. Sales Budi Santoso, ${state.items.length} toko, 12 bulan.',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF065F46),
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      PrimaryButton(
-                        label: 'Lihat laporan',
-                        backgroundColor: AppColors.adminTeal,
-                        onPressed: () => context.go('/admin/laporan'),
-                      ),
-                    ],
+                Text(
+                  'Disimpan 30 Okt 2026, 10.24. Sales Budi Santoso, ${state.items.length} toko, 12 bulan.',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(height: 16),
-              ],
-
-              // Tombol Simpan Mapping
-              PrimaryButton(
-                label: 'Simpan Mapping',
-                backgroundColor: AppColors.adminTeal,
-                isLoading: state.isLoading,
-                onPressed: () {
-                  ref.read(mappingAdminProvider.notifier).saveMapping();
-                },
-              ),
+                const SizedBox(height: 14),
+                PrimaryButton(
+                  label: 'Lihat laporan',
+                  backgroundColor: AppColors.adminTeal,
+                  onPressed: () => context.go('/admin/laporan'),
+                ),
+              ] else
+                PrimaryButton(
+                  label: 'Simpan Mapping',
+                  backgroundColor: AppColors.adminTeal,
+                  isLoading: state.isLoading,
+                  onPressed: () {
+                    ref.read(mappingAdminProvider.notifier).saveMapping();
+                  },
+                ),
             ],
           ),
         ),

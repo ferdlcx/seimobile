@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format.dart';
+import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../admin_data/presentation/providers/master_data_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/reschedule_provider.dart';
 
+/// Layar Pengajuan Reschedule Baru oleh Sales.
 class FormRescheduleScreen extends ConsumerStatefulWidget {
   final String? initialNoJo;
 
@@ -23,7 +27,7 @@ class FormRescheduleScreen extends ConsumerStatefulWidget {
 class _FormRescheduleScreenState extends ConsumerState<FormRescheduleScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _selectedNoJo;
-  DateTime _jadwalBaru = DateTime.now().add(const Duration(days: 3));
+  DateTime _jadwalBaru = DateTime(2026, 11, 3); // Sel, 03 Nov 2026
   final _alasanController = TextEditingController();
 
   @override
@@ -42,8 +46,8 @@ class _FormRescheduleScreenState extends ConsumerState<FormRescheduleScreen> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _jadwalBaru,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 90)),
+      firstDate: DateTime(2026, 10, 30),
+      lastDate: DateTime(2027, 12, 31),
       helpText: 'PILIH JADWAL PENGGANTI',
       cancelText: 'BATAL',
       confirmText: 'PILIH',
@@ -57,186 +61,220 @@ class _FormRescheduleScreenState extends ConsumerState<FormRescheduleScreen> {
   Widget build(BuildContext context) {
     final masterState = ref.watch(masterDataProvider);
     final rescheduleState = ref.watch(rescheduleProvider);
+    final config = ref.watch(appConfigProvider);
 
     final tokoList = masterState.tokoList;
     if (_selectedNoJo == null && tokoList.isNotEmpty) {
-      _selectedNoJo = tokoList.first.noJo;
+      final hasBintangTerang = tokoList.any((t) => t.noJo == 'JO-0501');
+      _selectedNoJo = hasBintangTerang ? 'JO-0501' : tokoList.first.noJo;
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navyHeader,
-        foregroundColor: Colors.white,
-        title: const Text(
-          'Buat Pengajuan Reschedule',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
-          ),
-        ),
+    final navItems = [
+      const RoleNavItem(
+        label: 'Mapping',
+        icon: Icons.map_outlined,
+        route: '/sales/mapping',
       ),
+      const RoleNavItem(
+        label: 'Kunjungan',
+        icon: Icons.place_outlined,
+        route: '/sales/kunjungan',
+      ),
+      if (config.enableReschedule)
+        const RoleNavItem(
+          label: 'Reschedule',
+          icon: Icons.event_repeat_outlined,
+          route: '/sales/reschedule',
+        ),
+      const RoleNavItem(
+        label: 'Kondite',
+        icon: Icons.star_outline,
+        route: '/sales/kondite',
+      ),
+    ];
+
+    return AppScaffold(
+      roleLabel: 'Sales',
+      menuTitle: 'Reschedule',
+      accentColor: AppColors.salesOrange,
+      navItems: navItems,
+      currentNavIndex: 2,
+      onNavTap: (idx) => context.go(navItems[idx].route),
+      onLogout: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (context.mounted) {
+          context.go('/pilih-peran');
+        }
+      },
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
-            if (rescheduleState.errorMessage != null)
-              Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.statusDitolakBg,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.statusDitolakText),
-                ),
+            // Back link "< Reschedule"
+            InkWell(
+              onTap: () => context.go('/sales/reschedule'),
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.error_outline,
-                      color: AppColors.statusDitolakText,
-                      size: 20,
+                    Icon(
+                      Icons.chevron_left_rounded,
+                      size: 18,
+                      color: AppColors.salesOrange,
                     ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        rescheduleState.errorMessage!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.statusDitolakText,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      'Reschedule',
+                      style: TextStyle(
+                        color: AppColors.salesOrange,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
               ),
+            ),
+            const SizedBox(height: 8),
 
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Pilih Toko',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  DropdownButtonFormField<String>(
-                    initialValue: _selectedNoJo,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                    ),
-                    items: tokoList.map((t) {
-                      return DropdownMenuItem<String>(
-                        value: t.noJo,
-                        child: Text(
-                          '${t.nama} (${t.noJo})',
-                          style: const TextStyle(fontSize: 13),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedNoJo = val);
-                      }
-                    },
-                    validator: (val) =>
-                        val == null ? 'Silakan pilih toko' : null,
-                  ),
-                  const SizedBox(height: 16),
-
-                  const Text(
-                    'Jadwal Pengganti',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  InkWell(
-                    onTap: () => _pilihTanggal(context),
-                    borderRadius: BorderRadius.circular(6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: AppColors.border),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            AppFormat.formatTanggalHari(_jadwalBaru),
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          const Icon(
-                            Icons.calendar_today_outlined,
-                            size: 18,
-                            color: AppColors.salesOrange,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
-                  const Text(
-                    'Alasan Reschedule',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    controller: _alasanController,
-                    maxLines: 3,
-                    style: const TextStyle(fontSize: 13),
-                    decoration: const InputDecoration(
-                      hintText:
-                          'Contoh: Toko sedang renovasi hingga akhir pekan...',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Alasan wajib diisi';
-                      }
-                      if (val.trim().length < 5) {
-                        return 'Alasan minimal 5 karakter';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
+            const Text(
+              'Pengajuan Reschedule Baru',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
+
+            if (rescheduleState.errorMessage != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.statusDitolakBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.statusDitolakText.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Text(
+                  rescheduleState.errorMessage!,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.statusDitolakText,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+            // Toko
+            const Text(
+              'Toko',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedNoJo,
+              isExpanded: true,
+              icon: const SizedBox.shrink(),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+              items: tokoList.map((t) {
+                return DropdownMenuItem<String>(
+                  value: t.noJo,
+                  child: Text(
+                    t.nama,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textPrimary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                );
+              }).toList(),
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedNoJo = val);
+                }
+              },
+              validator: (val) => val == null ? 'Silakan pilih toko' : null,
+            ),
+            const SizedBox(height: 12),
+
+            // Jadwal pengganti
+            const Text(
+              'Jadwal pengganti',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            InkWell(
+              onTap: () => _pilihTanggal(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 11,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: AppColors.borderStrong),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  AppFormat.formatTanggalHariSingkat(_jadwalBaru),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Alasan
+            const Text(
+              'Alasan',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 5),
+            TextFormField(
+              controller: _alasanController,
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textPrimary,
+              ),
+              decoration: const InputDecoration(
+                hintText: 'Jelaskan kenapa jadwal perlu diganti',
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'Alasan wajib diisi';
+                }
+                if (val.trim().length < 5) {
+                  return 'Alasan minimal 5 karakter';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
 
             PrimaryButton(
               label: 'Ajukan Reschedule',
@@ -261,7 +299,7 @@ class _FormRescheduleScreenState extends ConsumerState<FormRescheduleScreen> {
                         backgroundColor: AppColors.salesOrange,
                       ),
                     );
-                    context.pop();
+                    context.go('/sales/reschedule');
                   }
                 }
               },

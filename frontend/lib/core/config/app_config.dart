@@ -9,10 +9,16 @@ class AppConfig {
     defaultValue: 'http://10.0.2.2:8000/api/v1',
   );
 
-  /// Gunakan implementasi Mock (true) atau API nyata (false).
+  /// Gunakan database SQLite lokal persisten (true, default murni Dart/Flutter).
+  static const bool useSqlite = bool.fromEnvironment(
+    'USE_SQLITE',
+    defaultValue: true,
+  );
+
+  /// Gunakan implementasi Mock in-memory (false secara default).
   static const bool useMock = bool.fromEnvironment(
     'USE_MOCK',
-    defaultValue: true,
+    defaultValue: false,
   );
 
   /// Feature flag untuk modul Reschedule & Approval.

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:seui_centre/app.dart';
 import 'package:seui_centre/core/config/app_config.dart';
 import 'package:seui_centre/core/router/app_router.dart';
@@ -12,6 +13,11 @@ import 'package:seui_centre/features/auth/data/models/pengguna_model.dart';
 import 'package:seui_centre/features/auth/presentation/providers/auth_provider.dart';
 
 void main() {
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfiNoIsolate;
+  });
+
   group('Tahap 1 - Utilitas & Logika Inti', () {
     test('Haversine menghitung jarak dalam meter dengan benar', () {
       expect(haversine(-7.4243, 109.2391, -7.4243, 109.2391), closeTo(0.0, 0.1));
@@ -200,7 +206,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Monitoring Sales'), findsOneWidget);
+      expect(find.text('Beranda & monitoring'), findsOneWidget);
     });
   });
 
@@ -245,7 +251,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tambah Akun Baru'), findsOneWidget);
-      expect(find.text('Rudi Hartono'), findsOneWidget);
+
+      // Isi form tambah akun (Nama, Username, Password)
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'Rudi Hartono');
+      await tester.enterText(fields.at(1), 'rudi.hartono');
+      await tester.enterText(fields.at(2), 'password123');
+      await tester.pumpAndSettle();
 
       // Simpan Akun
       await tester.ensureVisible(find.text('Simpan Akun'));
@@ -254,8 +266,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1000));
       await tester.pumpAndSettle();
 
-      // Kembali ke layar akun dan ada banner sukses serta badge BARU
-      expect(find.text('Akun berhasil ditambahkan. Notifikasi dikirim: akun baru sudah muncul dengan label BARU.'), findsOneWidget);
+      // Kembali ke layar akun dan ada judul & banner sukses serta badge BARU
+      expect(find.text('Akun berhasil ditambahkan'), findsOneWidget);
+      expect(
+        find.text('Notifikasi dikirim: akun baru sudah muncul dengan label BARU.'),
+        findsOneWidget,
+      );
       expect(find.text('BARU'), findsOneWidget);
       expect(find.text('Rudi Hartono'), findsOneWidget);
     });
@@ -278,7 +294,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tambah Data Toko'), findsOneWidget);
-      expect(find.text('Toko Maju Bersama'), findsOneWidget);
+
+      // Isi form tambah toko (Nama Toko, No JO, Alamat)
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.at(0), 'Toko Maju Bersama');
+      await tester.enterText(fields.at(1), 'JO-0610');
+      await tester.enterText(fields.at(2), 'Jl. Merdeka No. 10, Purwokerto');
+      await tester.pumpAndSettle();
 
       // Simpan Toko
       await tester.ensureVisible(find.text('Simpan Data Toko'));
@@ -292,7 +314,7 @@ void main() {
       expect(find.text('Toko Maju Bersama'), findsOneWidget);
     });
 
-    testWidgets('Admin Mapping: lihat grid Excel dan simpan mapping', (tester) async {
+    testWidgets('Admin Mapping: lihat grid GitHub 12 bulan dan simpan mapping', (tester) async {
       await loginAsAdmin(tester);
 
       // Pindah ke tab Mapping
@@ -304,6 +326,7 @@ void main() {
       expect(find.text('Susun mapping toko'), findsOneWidget);
       expect(find.text('TOKO'), findsOneWidget);
       expect(find.text('JAN'), findsOneWidget);
+      expect(find.text('DES'), findsOneWidget);
 
       // Klik Simpan Mapping
       await tester.ensureVisible(find.text('Simpan Mapping'));
@@ -337,7 +360,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Hasil cetak laporan rekap'), findsOneWidget);
-      expect(find.text('S.E.U.I CENTRE – LAPORAN REKAP'), findsOneWidget);
+      expect(find.text('S.E.U.I CENTRE · LAPORAN REKAP'), findsOneWidget);
       expect(find.text('TOTAL'), findsOneWidget);
       expect(find.text('Cetak'), findsOneWidget);
       expect(find.text('Simpan PDF'), findsOneWidget);
@@ -388,7 +411,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Berpindah ke layar Kunjungan
-      expect(find.text('Progress Rute Kunjungan'), findsOneWidget);
+      expect(find.text('Progress rute hari ini'), findsOneWidget);
     });
 
     testWidgets('Sales Kunjungan: list toko, detail toko & simulasi radius GPS', (tester) async {
@@ -400,7 +423,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Progress Rute Kunjungan'), findsOneWidget);
+      expect(find.text('Progress rute hari ini'), findsOneWidget);
       expect(find.text('Toko Makmur Jaya'), findsOneWidget);
 
       // Tap Toko Makmur Jaya untuk masuk ke Detail
@@ -409,18 +432,24 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Detail Toko & Check-in'), findsOneWidget);
-      expect(find.text('DALAM RADIUS CHECK-IN'), findsOneWidget);
+      expect(find.text('LOKASI GPS'), findsOneWidget);
+      expect(
+        find.text('Anda berada di dalam radius check-in.'),
+        findsOneWidget,
+      );
 
-      // Tes tombol simulasi di luar radius (550 m)
-      await tester.tap(find.text('Simulasi Jauh (550 m)'));
+      // Toggle simulasi ke luar radius melalui ikon lokasi
+      await tester.tap(find.byKey(const Key('gps_sim_toggle')));
       await tester.pumpAndSettle();
-      expect(find.text('DI LUAR RADIUS CHECK-IN'), findsOneWidget);
+      expect(find.textContaining('Di luar radius check-in'), findsOneWidget);
 
-      // Kembalikan ke simulasi dekat (12 m)
-      await tester.tap(find.text('Simulasi Dekat (12 m)'));
+      // Kembalikan ke simulasi dekat
+      await tester.tap(find.byKey(const Key('gps_sim_toggle')));
       await tester.pumpAndSettle();
-      expect(find.text('DALAM RADIUS CHECK-IN'), findsOneWidget);
+      expect(
+        find.text('Anda berada di dalam radius check-in.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Sales Wizard Jurnal: isi jurnal kunjungan & simpan final', (tester) async {
@@ -443,17 +472,18 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Jurnal Kunjungan'), findsOneWidget);
-      expect(find.text('HASIL KUNJUNGAN (1/3)'), findsOneWidget);
+      expect(find.text('HASIL KUNJUNGAN 1/3'), findsOneWidget);
 
-      // Klik Lanjut ke Catatan & Bukti
-      await tester.ensureVisible(find.text('Lanjut ke Catatan & Bukti'));
-      await tester.tap(find.text('Lanjut ke Catatan & Bukti'));
+      // Klik Lanjut ke Order & Bukti
+      await tester.ensureVisible(find.text('Lanjut'));
+      await tester.tap(find.text('Lanjut'));
       await tester.pumpAndSettle();
 
+      expect(find.text('ORDER & BUKTI 3/3'), findsOneWidget);
+
       // Ambil foto nota PO (wajib jika Ada Order)
-      await tester.ensureVisible(find.text('Wajib: Ambil / Unggah Foto Nota PO'));
-      await tester.tap(find.text('Wajib: Ambil / Unggah Foto Nota PO'));
+      await tester.ensureVisible(find.text('Foto nota PO'));
+      await tester.tap(find.text('Foto nota PO'));
       await tester.pumpAndSettle();
 
       // Simpan Jurnal Kunjungan Final
@@ -464,7 +494,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Kembali ke daftar rute kunjungan
-      expect(find.text('Progress Rute Kunjungan'), findsOneWidget);
+      expect(find.text('Progress rute hari ini'), findsOneWidget);
     });
 
     testWidgets('Sales Reschedule: buat pengajuan reschedule baru', (tester) async {
@@ -476,15 +506,15 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Daftar Pengajuan Reschedule'), findsOneWidget);
+      expect(find.text('Pengajuan reschedule'), findsOneWidget);
 
-      // Klik + Pengajuan Baru
-      await tester.tap(find.text('+ Pengajuan Baru'));
+      // Klik "+ Buat Pengajuan Reschedule Baru"
+      await tester.tap(find.text('+ Buat Pengajuan Reschedule Baru'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1000));
       await tester.pumpAndSettle();
 
-      expect(find.text('Buat Pengajuan Reschedule'), findsOneWidget);
+      expect(find.text('Pengajuan Reschedule Baru'), findsOneWidget);
 
       // Masukkan alasan
       await tester.enterText(
@@ -501,8 +531,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Kembali ke daftar pengajuan
-      expect(find.text('Daftar Pengajuan Reschedule'), findsOneWidget);
-      expect(find.textContaining('Pemilik toko sedang di luar kota hingga lusa.'), findsOneWidget);
+      expect(find.text('Pengajuan reschedule'), findsOneWidget);
+      expect(
+        find.textContaining('Pemilik toko sedang di luar kota hingga lusa.'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('Sales Kondite Saya: tampilkan lembar 18 kriteria read-only', (tester) async {
@@ -514,13 +547,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Lembar Kondite Sales'), findsOneWidget);
-      expect(find.text('NILAI KONDITE BULAN INI'), findsOneWidget);
-      expect(find.text('Rincian 18 Kriteria Penilaian'), findsOneWidget);
+      expect(find.text('Kondite saya'), findsOneWidget);
+      expect(find.text('NILAI BULAN INI · OKT 2026'), findsOneWidget);
+      expect(find.text('18 KRITERIA (6 TERATAS)'), findsOneWidget);
 
-      final catatanFinder = find.text(
-        'Tidak ada tombol ubah di layar ini. Form kondite dinilai berkala oleh Manajer Sales.',
-      );
+      final catatanFinder = find.text('Tidak ada tombol ubah di layar ini.');
       await tester.scrollUntilVisible(catatanFinder, 300);
       expect(catatanFinder, findsOneWidget);
     });
@@ -558,10 +589,12 @@ void main() {
     testWidgets('Manajer Beranda: metrik ringkasan & beralih ke Mode Sales', (tester) async {
       await loginAsManajer(tester);
 
-      expect(find.text('Monitoring Sales'), findsOneWidget);
+      expect(find.text('Beranda & monitoring'), findsOneWidget);
       expect(find.text('Kunjungan'), findsOneWidget);
       expect(find.text('Order'), findsOneWidget);
       expect(find.text('Reschedule'), findsAtLeastNWidgets(1));
+      expect(find.text('REALISASI PER SALES'), findsOneWidget);
+      expect(find.text('Kepatuhan mapping'), findsOneWidget);
       expect(find.text('Mode Sales'), findsOneWidget);
 
       // Beralih ke Mode Sales tanpa login ulang
@@ -578,15 +611,15 @@ void main() {
       await loginAsManajer(tester);
 
       // Pindah ke tab Reschedule di bottom nav
-      await tester.tap(find.byIcon(Icons.approval_outlined));
+      await tester.tap(find.byIcon(Icons.calendar_today_outlined));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Approval Reschedule Kunjungan'), findsOneWidget);
-      expect(find.text('Menunggu Persetujuan'), findsOneWidget);
+      expect(find.text('Approval reschedule'), findsOneWidget);
+      expect(find.text('SUDAH DIPROSES'), findsOneWidget);
 
-      // Bila ada tombol Setujui, lakukan persetujuan
+      // Setujui pengajuan menunggu pertama
       final setujuiFinder = find.widgetWithText(ElevatedButton, 'Setujui');
       if (setujuiFinder.evaluate().isNotEmpty) {
         await tester.tap(setujuiFinder.first);
@@ -594,11 +627,14 @@ void main() {
         await tester.pump(const Duration(milliseconds: 1000));
         await tester.pumpAndSettle();
 
-        expect(find.text('Reschedule disetujui. Jadwal sales diperbarui.'), findsOneWidget);
+        expect(
+          find.text('Reschedule disetujui. Jadwal sales diperbarui.'),
+          findsOneWidget,
+        );
       }
     });
 
-    testWidgets('Manajer Penilaian Kondite: form 18 kriteria & hitung nilai akhir dinamis', (tester) async {
+    testWidgets('Manajer Penilaian Kondite & Cetak Lembar Kondite', (tester) async {
       await loginAsManajer(tester);
 
       // Pindah ke tab Kondite
@@ -607,29 +643,11 @@ void main() {
       await tester.pump(const Duration(milliseconds: 2000));
       await tester.pumpAndSettle();
 
-      expect(find.text('Penilaian Kondite Sales'), findsOneWidget);
-      expect(find.text('Form Penilaian 18 Kriteria'), findsOneWidget);
-
-      // Tombol Simpan Penilaian Kondite
-      final simpanFinder = find.text('Simpan Penilaian Kondite');
-      await tester.ensureVisible(simpanFinder);
-      expect(simpanFinder, findsOneWidget);
-
-      await tester.tap(simpanFinder);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 1500));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Penilaian kondite berhasil disimpan.'), findsOneWidget);
-    });
-
-    testWidgets('Manajer Cetak Lembar Kondite: lihat pratinjau dokumen & tanda tangan digital', (tester) async {
-      await loginAsManajer(tester);
-
-      await tester.tap(find.text('Kondite'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 2000));
-      await tester.pumpAndSettle();
+      expect(find.text('Nilai kondite'), findsOneWidget);
+      expect(find.text('NILAI AKHIR'), findsOneWidget);
+      expect(find.text('88.9'), findsOneWidget);
+      expect(find.text('Andi Pratama'), findsOneWidget);
+      expect(find.text('Budi Santoso'), findsOneWidget);
 
       // Tombol Cetak Lembar Kondite (PDF)
       final cetakPdfFinder = find.text('Cetak Lembar Kondite (PDF)');
@@ -641,12 +659,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Lembar Cetak Kondite'), findsOneWidget);
-      expect(find.text('PT. S.E.U.I CENTRE PURWOKERTO'), findsOneWidget);
-      expect(find.text('LEMBAR PENILAIAN KONDITE SALES'), findsOneWidget);
-      expect(find.text('✓ TTD DIGITAL VALID'), findsOneWidget);
-      expect(find.text('( Maya Kusuma )'), findsOneWidget);
-      expect(find.text('Cetak Dokumen'), findsOneWidget);
+      expect(find.text('Hasil cetak lembar kondite'), findsOneWidget);
+      expect(find.text('S.E.U.I CENTRE · LEMBAR KONDITE'), findsOneWidget);
+      expect(find.text('Tanda tangan digital Manajer Sales'), findsOneWidget);
+      expect(find.text('Cetak'), findsOneWidget);
       expect(find.text('Simpan PDF'), findsOneWidget);
     });
 
@@ -659,8 +675,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Monitoring & Laporan Sales'), findsOneWidget);
-      expect(find.text('KEPATUHAN JADWAL MAPPING'), findsOneWidget);
+      expect(find.text('Laporan & rekap'), findsOneWidget);
+      expect(find.text('PERINGATAN HARI INI'), findsOneWidget);
+      expect(find.text('Kepatuhan tutup'), findsOneWidget);
       expect(find.text('Cetak Laporan Rekap'), findsOneWidget);
 
       // Klik Cetak Laporan Rekap

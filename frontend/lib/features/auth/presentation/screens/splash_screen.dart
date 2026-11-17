@@ -51,37 +51,30 @@ class _SplashScreenState extends State<SplashScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 18,
-                    vertical: 10,
+                    vertical: 12,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Text(
                     'SEUI',
                     style: TextStyle(
                       color: AppColors.navyHeader,
-                      fontSize: 22,
+                      fontSize: 18,
                       fontWeight: FontWeight.w900,
-                      letterSpacing: 1.0,
+                      letterSpacing: 0.6,
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 const Text(
                   'S.E.U.I Centre',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 19,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.3,
                   ),
                 ),
                 const SizedBox(height: 6),
@@ -90,31 +83,30 @@ class _SplashScreenState extends State<SplashScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFF94A3B8),
-                    fontSize: 13,
+                    fontSize: 11,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
-                const SizedBox(height: 36),
-                // Progress Bar tipis
+                const SizedBox(height: 18),
+                // Progress Bar putih di track gelap
                 SizedBox(
-                  width: 200,
+                  width: 170,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(999),
                     child: const LinearProgressIndicator(
-                      minHeight: 4,
-                      backgroundColor: Color(0xFF1E293B),
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFF38BDF8),
-                      ),
+                      value: 0.62,
+                      minHeight: 5,
+                      backgroundColor: Color(0xFF334155),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 const Text(
                   'Menyiapkan jadwal mapping...',
                   style: TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 12,
+                    color: Color(0xFF94A3B8),
+                    fontSize: 10.5,
                   ),
                 ),
               ],

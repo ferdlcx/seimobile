@@ -3,15 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/format.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/pill_filter_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/widgets/progress_card.dart';
 import '../../../../core/widgets/state_view.dart';
+import '../../../../core/widgets/status_badge.dart';
 import '../../../admin_data/presentation/providers/master_data_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/laporan_provider.dart';
 
+/// Layar Laporan & Rekap seluruh wilayah oleh Manajer Sales.
 class ManajerLaporanScreen extends ConsumerWidget {
   const ManajerLaporanScreen({super.key});
 
@@ -24,13 +25,13 @@ class ManajerLaporanScreen extends ConsumerWidget {
     final navItems = [
       const RoleNavItem(
         label: 'Beranda',
-        icon: Icons.dashboard_outlined,
+        icon: Icons.home_outlined,
         route: '/manajer/beranda',
       ),
       if (config.enableReschedule)
         const RoleNavItem(
           label: 'Reschedule',
-          icon: Icons.approval_outlined,
+          icon: Icons.calendar_today_outlined,
           route: '/manajer/reschedule',
         ),
       const RoleNavItem(
@@ -40,13 +41,30 @@ class ManajerLaporanScreen extends ConsumerWidget {
       ),
       const RoleNavItem(
         label: 'Laporan',
-        icon: Icons.bar_chart_outlined,
+        icon: Icons.description_outlined,
         route: '/manajer/laporan',
       ),
     ];
 
-    final monitoring = state.monitoring;
-    final tanggalStr = AppFormat.formatTanggalHari(config.mockToday);
+    final tokoList = masterState.tokoList.where((t) {
+      if (state.filterWilayahId != null &&
+          t.wilayah.id != state.filterWilayahId) {
+        return false;
+      }
+      return true;
+    }).toList()
+      ..sort((a, b) {
+        if (a.sudahDikunjungiBulanIni == b.sudahDikunjungiBulanIni) return 0;
+        return a.sudahDikunjungiBulanIni ? 1 : -1;
+      });
+
+    final tokoBelum =
+        tokoList.where((t) => !t.sudahDikunjungiBulanIni).length;
+    final totalToko = tokoList.length;
+    final tokoSudah = totalToko - tokoBelum;
+    final kepatuhanPersen = state.filterWilayahId == null
+        ? (state.monitoring?.kepatuhanMapping ?? 75)
+        : (totalToko > 0 ? ((tokoSudah / totalToko) * 100).round() : 0);
 
     return AppScaffold(
       roleLabel: 'Manajer Sales',
@@ -62,164 +80,208 @@ class ManajerLaporanScreen extends ConsumerWidget {
         }
       },
       body: StateView(
-        isLoading: state.isLoading && monitoring == null,
+        isLoading: state.isLoading && state.monitoring == null,
         errorMessage: state.errorMessage,
         onRetry: () => ref.read(laporanProvider.notifier).loadData(),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
             const Text(
-              'Monitoring & Laporan Sales',
+              'Laporan & rekap',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              'Update realisasi per $tanggalStr',
-              style: const TextStyle(
-                fontSize: 12,
+            const SizedBox(height: 4),
+            const Text(
+              'Rekap kunjungan seluruh wilayah sales.',
+              style: TextStyle(
+                fontSize: 11.5,
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: 12),
 
-            // Filter Wilayah
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
+            // Filter Wilayah (2 baris pill biru)
+            WilayahFilterBar(
+              wilayahList: masterState.wilayahList,
+              selectedWilayahId: state.filterWilayahId,
+              activeColor: AppColors.manajerBlue,
+              onSelected: (wilayahId) {
+                ref.read(laporanProvider.notifier).filterWilayah(wilayahId);
+              },
+            ),
+            const SizedBox(height: 14),
+
+            // Card Peringatan Hari Ini (Gelap Navy)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.navyHeader,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ChoiceChip(
-                    label: const Text('Semua Wilayah'),
-                    selected: state.filterWilayahId == null,
-                    selectedColor: AppColors.manajerBlue,
-                    labelStyle: TextStyle(
-                      color: state.filterWilayahId == null
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                  const Text(
+                    'PERINGATAN HARI INI',
+                    style: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.6,
                     ),
-                    onSelected: (val) {
-                      if (val) {
-                        ref.read(laporanProvider.notifier).filterWilayah(null);
-                      }
-                    },
                   ),
-                  const SizedBox(width: 8),
-                  ...masterState.wilayahList.map((w) {
-                    final isSelected = state.filterWilayahId == w.id;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(w.nama),
-                        selected: isSelected,
-                        selectedColor: AppColors.manajerBlue,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: (val) {
-                          ref
-                              .read(laporanProvider.notifier)
-                              .filterWilayah(val ? w.id : null);
-                        },
-                      ),
-                    );
-                  }),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$tokoBelum toko belum dikunjungi',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Tindak lanjuti sebelum akhir bulan.',
+                    style: TextStyle(
+                      color: Color(0xFFCBD5E1),
+                      fontSize: 11.5,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Peringatan Toko Lama Belum Dikunjungi
-            if (monitoring != null && monitoring.peringatan.isNotEmpty)
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.warningBannerBg,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.warningBannerBorder),
+            // Daftar Toko (Belum di atas)
+            ...tokoList.map((toko) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
                   children: [
-                    const Row(
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            toko.nama,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${toko.noJo} · ${toko.wilayah.nama}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    StatusBadge.kunjungan(toko.sudahDikunjungiBulanIni),
+                  ],
+                ),
+              );
+            }),
+            const SizedBox(height: 6),
+
+            // Kartu Metrik Kepatuhan Tutup & Realisasi
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.softSurface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.warning_amber_rounded,
-                          color: AppColors.warningBannerText,
-                          size: 20,
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          'PERINGATAN HARI INI',
+                        const Text(
+                          'Kepatuhan tutup',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$kepatuhanPersen%',
+                          style: const TextStyle(
+                            fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: AppColors.warningBannerText,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    ...monitoring.peringatan.map(
-                      (p) => Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          '• $p',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.warningBannerText,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.softSurface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Realisasi',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '$tokoSudah / $totalToko',
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-
-            // Progress Card Kepatuhan & Realisasi
-            if (monitoring != null) ...[
-              ProgressCard(
-                title: 'KEPATUHAN JADWAL MAPPING',
-                mainValue: '${monitoring.kepatuhanMapping}%',
-                subtitle:
-                    'Realisasi kunjungan sesuai jadwal mapping bulan berjalan',
-                progress: monitoring.kepatuhanMapping / 100,
-                progressColor: AppColors.manajerBlue,
-              ),
-              const SizedBox(height: 12),
-              ProgressCard(
-                title: 'REALISASI KUNJUNGAN TOKO',
-                mainValue:
-                    '${monitoring.kunjungan} / ${monitoring.targetKunjungan}',
-                subtitle:
-                    'Target kunjungan bulanan (${monitoring.order} order diperoleh)',
-                progress: monitoring.targetKunjungan > 0
-                    ? monitoring.kunjungan / monitoring.targetKunjungan
-                    : 0.0,
-                progressColor: AppColors.manajerBlue,
-              ),
-            ],
-            const SizedBox(height: 20),
+              ],
+            ),
+            const SizedBox(height: 14),
 
             // Tombol Cetak Laporan Rekap
             PrimaryButton(
               label: 'Cetak Laporan Rekap',
-              icon: Icons.print_outlined,
               backgroundColor: AppColors.manajerBlue,
               onPressed: () {
                 context.push('/manajer/laporan/hasil-rekap');
               },
             ),
-            const SizedBox(height: 24),
           ],
         ),
       ),

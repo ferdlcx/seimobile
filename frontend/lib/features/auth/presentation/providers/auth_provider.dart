@@ -79,7 +79,7 @@ class AuthNotifier extends Notifier<AuthState> {
       user: current.user,
       mode: newMode,
     );
-    ref.read(mockDatabaseProvider).currentSession = updated;
+    ref.read(authRepositoryProvider).updateMode(newMode);
     state = state.copyWith(session: updated);
   }
 

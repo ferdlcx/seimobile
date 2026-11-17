@@ -5,6 +5,7 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/pill_filter_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/progress_card.dart';
 import '../../../../core/widgets/state_view.dart';
@@ -54,7 +55,6 @@ class SalesMappingScreen extends ConsumerWidget {
     final data = state.data;
     final total = data?.totalTarget ?? 6;
     final sudah = data?.sudahDikunjungi ?? 4;
-    final belum = (total - sudah).clamp(0, total);
     final progress = total > 0 ? (sudah / total) : 0.0;
 
     return AppScaffold(
@@ -76,12 +76,12 @@ class SalesMappingScreen extends ConsumerWidget {
         onRetry: () =>
             ref.read(mappingHariIniProvider.notifier).loadMappingHariIni(),
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
             const Text(
               'Mapping hari ini',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
@@ -90,77 +90,34 @@ class SalesMappingScreen extends ConsumerWidget {
             Text(
               '$tanggalStr · $salesNama',
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 12),
 
-            // Filter Wilayah
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ChoiceChip(
-                    label: const Text('Semua'),
-                    selected: state.filterWilayahId == null,
-                    selectedColor: AppColors.salesOrange,
-                    labelStyle: TextStyle(
-                      color: state.filterWilayahId == null
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        ref
-                            .read(mappingHariIniProvider.notifier)
-                            .filterWilayah(null);
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ...masterState.wilayahList.map((w) {
-                    final isSelected = state.filterWilayahId == w.id;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(w.nama),
-                        selected: isSelected,
-                        selectedColor: AppColors.salesOrange,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.textPrimary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        onSelected: (val) {
-                          ref
-                              .read(mappingHariIniProvider.notifier)
-                              .filterWilayah(val ? w.id : null);
-                        },
-                      ),
-                    );
-                  }),
-                ],
-              ),
+            // Filter Wilayah (2 baris pill)
+            WilayahFilterBar(
+              wilayahList: masterState.wilayahList,
+              selectedWilayahId: state.filterWilayahId,
+              activeColor: AppColors.salesOrange,
+              onSelected: (wilayahId) {
+                ref
+                    .read(mappingHariIniProvider.notifier)
+                    .filterWilayah(wilayahId);
+              },
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
             // Kartu Progres Rute Hari Ini
             ProgressCard(
               title: 'PROGRESS RUTE HARI INI',
               mainValue: '$sudah / $total',
-              subtitle: belum == 0
-                  ? 'Semua target kunjungan bulan ini telah selesai!'
-                  : '$belum toko belum dikunjungi',
+              subtitle: '$sudah dari $total toko sudah dikunjungi',
               progress: progress,
-              progressColor: AppColors.salesOrange,
+              progressColor: Colors.white,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Daftar Toko
             if (data != null) ...[
@@ -169,7 +126,7 @@ class SalesMappingScreen extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 12,
+                    vertical: 11,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -185,7 +142,7 @@ class SalesMappingScreen extends ConsumerWidget {
                             Text(
                               toko.nama,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.textPrimary,
                               ),
@@ -208,7 +165,7 @@ class SalesMappingScreen extends ConsumerWidget {
               }),
             ],
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             PrimaryButton(
               label: 'Mulai Check-in',
               backgroundColor: AppColors.salesOrange,

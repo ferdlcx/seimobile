@@ -3,31 +3,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../core/utils/format.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/pill_filter_bar.dart';
 import '../../../../core/widgets/progress_card.dart';
 import '../../../../core/widgets/state_view.dart';
 import '../../../../core/widgets/status_badge.dart';
+import '../../../admin_data/presentation/providers/master_data_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../mapping/presentation/providers/mapping_hari_ini_provider.dart';
 
-enum FilterKunjunganStatus { semua, belum, sudah }
-
-class SalesKunjunganScreen extends ConsumerStatefulWidget {
+/// Layar Progress Rute Hari Ini untuk peran Sales.
+class SalesKunjunganScreen extends ConsumerWidget {
   const SalesKunjunganScreen({super.key});
 
   @override
-  ConsumerState<SalesKunjunganScreen> createState() =>
-      _SalesKunjunganScreenState();
-}
-
-class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
-  FilterKunjunganStatus _filter = FilterKunjunganStatus.semua;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(mappingHariIniProvider);
-    final auth = ref.watch(authProvider);
+    final masterState = ref.watch(masterDataProvider);
     final config = ref.watch(appConfigProvider);
 
     final navItems = [
@@ -54,24 +46,12 @@ class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
       ),
     ];
 
-    final salesNama = auth.session?.user.nama ?? 'Budi Santoso';
-    final tanggalStr = AppFormat.formatTanggalHari(config.mockToday);
-
     final data = state.data;
     final total = data?.totalTarget ?? 6;
     final sudah = data?.sudahDikunjungi ?? 4;
     final belum = (total - sudah).clamp(0, total);
     final progress = total > 0 ? (sudah / total) : 0.0;
-
-    final daftarToko = (data?.daftarToko ?? []).where((toko) {
-      if (_filter == FilterKunjunganStatus.belum) {
-        return !toko.sudahDikunjungiBulanIni;
-      }
-      if (_filter == FilterKunjunganStatus.sudah) {
-        return toko.sudahDikunjungiBulanIni;
-      }
-      return true;
-    }).toList();
+    final daftarToko = data?.daftarToko ?? [];
 
     return AppScaffold(
       roleLabel: 'Sales',
@@ -92,99 +72,48 @@ class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
         onRetry: () =>
             ref.read(mappingHariIniProvider.notifier).loadMappingHariIni(),
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
             const Text(
-              'Progress Rute Kunjungan',
+              'Progress rute hari ini',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              '$tanggalStr · $salesNama',
-              style: const TextStyle(
-                fontSize: 12,
+            const Text(
+              'Ketuk toko untuk melihat detail dan check-in.',
+              style: TextStyle(
+                fontSize: 11.5,
                 color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
               ),
+            ),
+            const SizedBox(height: 12),
+
+            // Filter Wilayah (2 baris pill) sesuai mockup
+            WilayahFilterBar(
+              wilayahList: masterState.wilayahList,
+              selectedWilayahId: state.filterWilayahId,
+              activeColor: AppColors.salesOrange,
+              onSelected: (wilayahId) {
+                ref
+                    .read(mappingHariIniProvider.notifier)
+                    .filterWilayah(wilayahId);
+              },
             ),
             const SizedBox(height: 12),
 
             // Kartu Ringkasan Progres
             ProgressCard(
-              title: 'PROGRES RUTE KUNJUNGAN',
+              title: 'KUNJUNGAN SELESAI',
               mainValue: '$sudah / $total',
               subtitle: belum == 0
                   ? 'Semua target kunjungan telah selesai!'
-                  : '$belum toko menunggu untuk dikunjungi',
+                  : '$belum toko belum dikunjungi',
               progress: progress,
-              progressColor: AppColors.salesOrange,
-            ),
-            const SizedBox(height: 16),
-
-            // Filter Tabs
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ChoiceChip(
-                    label: const Text('Semua'),
-                    selected: _filter == FilterKunjunganStatus.semua,
-                    selectedColor: AppColors.salesOrange,
-                    labelStyle: TextStyle(
-                      color: _filter == FilterKunjunganStatus.semua
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        setState(() => _filter = FilterKunjunganStatus.semua);
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text('Belum Dikunjungi'),
-                    selected: _filter == FilterKunjunganStatus.belum,
-                    selectedColor: AppColors.salesOrange,
-                    labelStyle: TextStyle(
-                      color: _filter == FilterKunjunganStatus.belum
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        setState(() => _filter = FilterKunjunganStatus.belum);
-                      }
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text('Selesai Dikunjungi'),
-                    selected: _filter == FilterKunjunganStatus.sudah,
-                    selectedColor: AppColors.salesOrange,
-                    labelStyle: TextStyle(
-                      color: _filter == FilterKunjunganStatus.sudah
-                          ? Colors.white
-                          : AppColors.textPrimary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    onSelected: (val) {
-                      if (val) {
-                        setState(() => _filter = FilterKunjunganStatus.sudah);
-                      }
-                    },
-                  ),
-                ],
-              ),
+              progressColor: Colors.white,
             ),
             const SizedBox(height: 12),
 
@@ -193,7 +122,7 @@ class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 alignment: Alignment.center,
                 child: const Text(
-                  'Tidak ada toko dalam kategori ini.',
+                  'Tidak ada toko pada wilayah ini.',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 13,
@@ -202,43 +131,25 @@ class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
               )
             else
               ...daftarToko.map((toko) {
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  elevation: 0,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.border),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
                   ),
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     onTap: () {
                       context.push('/sales/kunjungan/detail/${toko.noJo}');
                     },
                     child: Padding(
-                      padding: const EdgeInsets.all(14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 11,
+                      ),
                       child: Row(
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: toko.sudahDikunjungiBulanIni
-                                  ? AppColors.statusSudahBg
-                                  : AppColors.statusBelumBg,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(
-                              toko.sudahDikunjungiBulanIni
-                                  ? Icons.check_circle_outline
-                                  : Icons.storefront_outlined,
-                              color: toko.sudahDikunjungiBulanIni
-                                  ? AppColors.statusSudahText
-                                  : AppColors.statusBelumText,
-                              size: 22,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +157,7 @@ class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
                                 Text(
                                   toko.nama,
                                   style: const TextStyle(
-                                    fontSize: 14,
+                                    fontSize: 13.5,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.textPrimary,
                                   ),
@@ -259,34 +170,10 @@ class _SalesKunjunganScreenState extends ConsumerState<SalesKunjunganScreen> {
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  toko.alamat,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 11,
-                                    color: AppColors.textSecondary,
-                                  ),
-                                ),
                               ],
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              StatusBadge.kunjungan(
-                                toko.sudahDikunjungiBulanIni,
-                              ),
-                              const SizedBox(height: 6),
-                              const Icon(
-                                Icons.chevron_right,
-                                color: AppColors.textSecondary,
-                                size: 18,
-                              ),
-                            ],
-                          ),
+                          StatusBadge.kunjungan(toko.sudahDikunjungiBulanIni),
                         ],
                       ),
                     ),

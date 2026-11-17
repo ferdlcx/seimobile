@@ -27,17 +27,26 @@ class MockMappingRepository implements MappingRepository {
                   .map((e) => e.idMapping)
                   .reduce((a, b) => a > b ? a : b) +
               1;
-      for (final t in db.tokoList) {
+      const polaBulan = <List<bool>>[
+        [false, true, true, false, true, true, false, true, true, true, true, true],
+        [true, true, false, true, true, false, true, true, false, true, true, false],
+        [true, false, true, true, false, true, true, false, true, true, false, true],
+      ];
+      for (var i = 0; i < db.tokoList.length; i++) {
+        final t = db.tokoList[i];
+        final rencana = List<bool>.from(polaBulan[i % polaBulan.length]);
         db.mappingList.add(
           MappingToko(
             idMapping: nextId++,
             idSales: salesId,
             tahun: tahun,
             toko: t,
-            bulan: List<bool>.filled(12, true),
+            bulan: rencana,
             terealisasi: List<bool>.generate(
               12,
-              (m) => m == 9 ? t.sudahDikunjungiBulanIni : m < 9,
+              (m) => !rencana[m]
+                  ? false
+                  : (m == 9 ? t.sudahDikunjungiBulanIni : m < 9),
             ),
           ),
         );

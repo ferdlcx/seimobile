@@ -15,7 +15,7 @@ class ProgressCard extends StatelessWidget {
     required this.mainValue,
     required this.subtitle,
     this.progress,
-    this.progressColor = AppColors.salesOrange,
+    this.progressColor = Colors.white,
   });
 
   @override
@@ -34,7 +34,7 @@ class ProgressCard extends StatelessWidget {
             title.toUpperCase(),
             style: const TextStyle(
               color: Color(0xFF94A3B8),
-              fontSize: 11,
+              fontSize: 10.5,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.6,
             ),
@@ -44,30 +44,33 @@ class ProgressCard extends StatelessWidget {
             mainValue,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 28,
+              fontSize: 26,
               fontWeight: FontWeight.w800,
+              height: 1.15,
             ),
           ),
           if (progress != null) ...[
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: progress!.clamp(0.0, 1.0),
-                minHeight: 6,
-                backgroundColor: const Color(0xFF1E293B),
+                minHeight: 5,
+                backgroundColor: const Color(0xFF263554),
                 valueColor: AlwaysStoppedAnimation<Color>(progressColor),
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              color: Color(0xFFCBD5E1),
-              fontSize: 12,
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                color: Color(0xFFCBD5E1),
+                fontSize: 11.5,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

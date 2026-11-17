@@ -56,6 +56,11 @@ class ApiAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> updateMode(String mode) async {
+    await client.secureStorage.write(key: 'auth_mode', value: mode);
+  }
+
+  @override
   Future<void> simpanTandaTangan(String base64Signature) async {
     // TODO(backend): Hubungkan ke endpoint simpan tanda tangan profil
   }

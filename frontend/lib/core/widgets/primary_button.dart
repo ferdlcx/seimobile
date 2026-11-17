@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// Tombol utama reusable yang mendukung status loading dan mencegah klik ganda.
+/// Tombol utama reusable yang mendukung status loading, outlined, soft secondary, dan mencegah klik ganda.
 class PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final Color? backgroundColor;
   final bool isOutlined;
+  final bool isSoftSecondary;
   final IconData? icon;
   final double? width;
+  final double height;
 
   const PrimaryButton({
     super.key,
@@ -18,8 +20,10 @@ class PrimaryButton extends StatelessWidget {
     this.isLoading = false,
     this.backgroundColor,
     this.isOutlined = false,
+    this.isSoftSecondary = false,
     this.icon,
     this.width,
+    this.height = 44,
   });
 
   @override
@@ -27,20 +31,43 @@ class PrimaryButton extends StatelessWidget {
     final effectiveColor = backgroundColor ?? Theme.of(context).primaryColor;
     final canPress = !isLoading && onPressed != null;
 
-    if (isOutlined) {
+    if (isSoftSecondary) {
       return SizedBox(
         width: width ?? double.infinity,
-        height: 46,
+        height: height,
         child: OutlinedButton(
           onPressed: canPress ? onPressed : null,
           style: OutlinedButton.styleFrom(
+            backgroundColor: AppColors.softSurface,
+            foregroundColor: AppColors.navyHeader,
+            side: const BorderSide(
+              color: AppColors.border,
+              width: 1,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          child: _buildChild(AppColors.navyHeader),
+        ),
+      );
+    }
+
+    if (isOutlined) {
+      return SizedBox(
+        width: width ?? double.infinity,
+        height: height,
+        child: OutlinedButton(
+          onPressed: canPress ? onPressed : null,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.white,
             foregroundColor: effectiveColor,
             side: BorderSide(
               color: canPress ? effectiveColor : AppColors.border,
               width: 1.2,
             ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
           ),
           child: _buildChild(effectiveColor),
@@ -50,7 +77,7 @@ class PrimaryButton extends StatelessWidget {
 
     return SizedBox(
       width: width ?? double.infinity,
-      height: 46,
+      height: height,
       child: ElevatedButton(
         onPressed: canPress ? onPressed : null,
         style: ElevatedButton.styleFrom(
@@ -60,7 +87,7 @@ class PrimaryButton extends StatelessWidget {
           disabledForegroundColor: AppColors.textSecondary,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
         ),
         child: _buildChild(Colors.white),
@@ -85,15 +112,15 @@ class PrimaryButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18),
-          const SizedBox(width: 8),
+          Icon(icon, size: 17),
+          const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13.5,
               ),
             ),
           ),
@@ -106,7 +133,7 @@ class PrimaryButton extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: const TextStyle(
         fontWeight: FontWeight.w600,
-        fontSize: 14,
+        fontSize: 13.5,
       ),
     );
   }

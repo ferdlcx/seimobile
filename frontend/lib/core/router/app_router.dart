@@ -245,7 +245,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/manajer/laporan/hasil-rekap',
-        builder: (context, state) => const HasilRekapScreen(),
+        builder: (context, state) => const HasilRekapScreen(
+          backRoute: '/manajer/laporan',
+          roleLabel: 'Manajer Sales',
+          accentColor: AppColors.manajerBlue,
+        ),
       ),
 
       // Placeholder Fallback

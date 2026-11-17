@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/pill_filter_bar.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../providers/auth_provider.dart';
 
@@ -25,7 +26,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _usernameController;
   late final TextEditingController _passwordController;
-  bool _obscurePassword = true;
   String _selectedMode = 'manajer'; // Khusus manajer_sales: 'manajer' | 'sales'
 
   @override
@@ -100,33 +100,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return AppScaffold(
       roleLabel: _roleLabel,
       menuTitle: 'Masuk',
+      customSubtitle: 'Mapping, Aktivitas, dan Kondite Sales',
       accentColor: _accentColor,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Tombol "‹ Ganti peran"
+              // Tombol "‹ Ganti peran" dengan warna aksen peran
               InkWell(
                 onTap: () => context.go('/pilih-peran'),
                 borderRadius: BorderRadius.circular(4),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 4),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.chevron_left_rounded,
-                        size: 20,
-                        color: Color(0xFF2563EB),
+                        size: 18,
+                        color: _accentColor,
                       ),
                       Text(
                         'Ganti peran',
                         style: TextStyle(
-                          color: Color(0xFF2563EB),
-                          fontSize: 13,
+                          color: _accentColor,
+                          fontSize: 12,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -134,13 +135,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Judul & Teks Penjelas
               Text(
                 'Masuk sebagai $_roleLabel',
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
@@ -149,20 +150,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const Text(
                 'Akun contoh sudah terisi. Salah isi akan menampilkan pesan merah dan tetap di halaman login.',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 11.5,
                   color: AppColors.textSecondary,
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
               // Kotak pesan error jika autentikasi gagal
               if (auth.errorMessage != null && auth.errorMessage!.isNotEmpty) ...[
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
+                    horizontal: 12,
+                    vertical: 9,
                   ),
                   decoration: BoxDecoration(
                     color: AppColors.statusDitolakBg,
@@ -175,7 +176,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       const Icon(
                         Icons.error_outline_rounded,
-                        size: 18,
+                        size: 17,
                         color: AppColors.statusDitolakText,
                       ),
                       const SizedBox(width: 8),
@@ -184,7 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           auth.errorMessage!,
                           style: const TextStyle(
                             color: AppColors.statusDitolakText,
-                            fontSize: 12,
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -192,21 +193,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
               ],
 
               // Field Username
               const Text(
                 'Username',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               TextFormField(
                 controller: _usernameController,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
                 decoration: const InputDecoration(
                   hintText: 'Masukkan username',
                 ),
@@ -217,37 +222,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               // Field Password
               const Text(
                 'Password',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+                  color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 5),
               TextFormField(
                 controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
+                obscureText: true,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textPrimary,
+                ),
+                decoration: const InputDecoration(
                   hintText: 'Masukkan password',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      size: 20,
-                      color: AppColors.textSecondary,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -259,50 +254,47 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Pilihan Mode Masuk (khusus Manajer Sales)
+              // Pilihan Mode Masuk (khusus Manajer Sales) berbentuk 2 pill ringkas
               if (widget.role == 'manajer_sales') ...[
                 const Text(
                   'Mode masuk (akun rangkap Sales)',
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
+                Wrap(
+                  spacing: 8,
                   children: [
-                    Expanded(
-                      child: _ModeOptionButton(
-                        label: 'Manajer',
-                        isSelected: _selectedMode == 'manajer',
-                        activeColor: AppColors.manajerBlue,
-                        onTap: () {
-                          setState(() {
-                            _selectedMode = 'manajer';
-                          });
-                        },
-                      ),
+                    PillChip(
+                      label: 'Manajer',
+                      selected: _selectedMode == 'manajer',
+                      activeColor: AppColors.manajerBlue,
+                      onTap: () {
+                        setState(() {
+                          _selectedMode = 'manajer';
+                        });
+                      },
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _ModeOptionButton(
-                        label: 'Sales',
-                        isSelected: _selectedMode == 'sales',
-                        activeColor: AppColors.salesOrange,
-                        onTap: () {
-                          setState(() {
-                            _selectedMode = 'sales';
-                          });
-                        },
-                      ),
+                    PillChip(
+                      label: 'Sales',
+                      selected: _selectedMode == 'sales',
+                      activeColor: AppColors.salesOrange,
+                      onTap: () {
+                        setState(() {
+                          _selectedMode = 'sales';
+                        });
+                      },
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
-              ],
+                const SizedBox(height: 16),
+              ] else
+                const SizedBox(height: 4),
 
               // Tombol Masuk
               PrimaryButton(
@@ -312,48 +304,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: _handleLogin,
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModeOptionButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final Color activeColor;
-  final VoidCallback onTap;
-
-  const _ModeOptionButton({
-    required this.label,
-    required this.isSelected,
-    required this.activeColor,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        height: 42,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isSelected ? activeColor : AppColors.border,
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
-            fontSize: 13,
-            fontWeight: FontWeight.w700,
           ),
         ),
       ),

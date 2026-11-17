@@ -86,17 +86,18 @@ class StatusBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: fg,
-          fontSize: 11,
+          fontSize: 10.5,
           fontWeight: FontWeight.w600,
+          height: 1.2,
         ),
       ),
     );
@@ -134,8 +135,8 @@ class NilaiKonditeBadge extends StatelessWidget {
     }
 
     return Container(
-      width: 28,
-      height: 28,
+      width: 24,
+      height: 24,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: bg,
@@ -146,7 +147,7 @@ class NilaiKonditeBadge extends StatelessWidget {
         style: TextStyle(
           color: fg,
           fontWeight: FontWeight.w700,
-          fontSize: 12,
+          fontSize: 10.5,
         ),
       ),
     );

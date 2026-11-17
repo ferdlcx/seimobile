@@ -3,12 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
-import '../../../../core/widgets/status_badge.dart';
 import '../../../admin_data/data/models/master_models.dart';
 import '../../../admin_data/presentation/providers/master_data_provider.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/kunjungan_provider.dart';
 
+/// Layar Detail Toko & Validasi Radius GPS sebelum Check-in.
 class DetailTokoScreen extends ConsumerStatefulWidget {
   final String noJo;
 
@@ -42,6 +44,14 @@ class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
     }
   }
 
+  void _toggleSimulasiGps(Toko toko, bool currentlyInRadius) {
+    if (currentlyInRadius) {
+      ref.read(kunjunganGpsProvider.notifier).setSimulasiLuarRadius(toko);
+    } else {
+      ref.read(kunjunganGpsProvider.notifier).perbaruiLokasi(toko);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final gpsState = ref.watch(kunjunganGpsProvider);
@@ -57,292 +67,175 @@ class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
 
     final toko = _toko;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navyHeader,
-        foregroundColor: Colors.white,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Detail Toko & Check-in',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-            ),
-            Text(
-              widget.noJo,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.white70,
-              ),
-            ),
-          ],
-        ),
+    final navItems = [
+      const RoleNavItem(
+        label: 'Mapping',
+        icon: Icons.map_outlined,
+        route: '/sales/mapping',
       ),
+      const RoleNavItem(
+        label: 'Kunjungan',
+        icon: Icons.place_outlined,
+        route: '/sales/kunjungan',
+      ),
+      if (config.enableReschedule)
+        const RoleNavItem(
+          label: 'Reschedule',
+          icon: Icons.event_repeat_outlined,
+          route: '/sales/reschedule',
+        ),
+      const RoleNavItem(
+        label: 'Kondite',
+        icon: Icons.star_outline,
+        route: '/sales/kondite',
+      ),
+    ];
+
+    return AppScaffold(
+      roleLabel: 'Sales',
+      menuTitle: 'Kunjungan',
+      accentColor: AppColors.salesOrange,
+      navItems: navItems,
+      currentNavIndex: 1,
+      onNavTap: (idx) => context.go(navItems[idx].route),
+      onLogout: () async {
+        await ref.read(authProvider.notifier).logout();
+        if (context.mounted) {
+          context.go('/pilih-peran');
+        }
+      },
       body: toko == null
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.salesOrange),
             )
           : ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               children: [
-                // Kartu Informasi Toko
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.border),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              toko.nama,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                          StatusBadge.kunjungan(toko.sudahDikunjungiBulanIni),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Nomor JO: ${toko.noJo}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                // Back link "< Rute hari ini"
+                InkWell(
+                  onTap: () => context.go('/sales/kunjungan'),
+                  borderRadius: BorderRadius.circular(4),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.chevron_left_rounded,
+                          size: 18,
+                          color: AppColors.salesOrange,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Wilayah: ${toko.wilayah.nama}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Divider(height: 20),
-                      const Text(
-                        'Alamat Lengkap',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        toko.alamat,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      if (toko.ket.isNotEmpty) ...[
-                        const SizedBox(height: 8),
                         Text(
-                          'Catatan: ${toko.ket}',
-                          style: const TextStyle(
+                          'Rute hari ini',
+                          style: TextStyle(
+                            color: AppColors.salesOrange,
                             fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
-                      const SizedBox(height: 8),
-                      Text(
-                        'Titik Koordinat: ${toko.lat.toStringAsFixed(4)}, ${toko.lng.toStringAsFixed(4)}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Kartu GPS & Status Radius
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: gpsState.isInRadius
-                          ? AppColors.statusSudahText
-                          : AppColors.statusDitolakText,
-                      width: 1.5,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.my_location,
-                                size: 18,
-                                color: AppColors.textPrimary,
-                              ),
-                              SizedBox(width: 6),
-                              Text(
-                                'STATUS LOKASI GPS',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            icon: gpsState.isLoadingGps
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.salesOrange,
-                                    ),
-                                  )
-                                : const Icon(
-                                    Icons.refresh,
-                                    size: 20,
-                                    color: AppColors.salesOrange,
-                                  ),
-                            onPressed: gpsState.isLoadingGps
-                                ? null
-                                : () => ref
-                                    .read(kunjunganGpsProvider.notifier)
-                                    .perbaruiLokasi(toko),
-                            tooltip: 'Perbarui GPS',
-                          ),
-                        ],
+                ),
+                const SizedBox(height: 8),
+
+                // Nama Toko & Subjudul JO + Alamat
+                Text(
+                  toko.nama,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${toko.noJo} · ${toko.alamat}',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Kartu Lokasi GPS Ringkas
+                GestureDetector(
+                  onLongPress: () => _toggleSimulasiGps(toko, gpsState.isInRadius),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: gpsState.isInRadius
+                          ? AppColors.softSurface
+                          : AppColors.statusDitolakBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: gpsState.isInRadius
+                            ? AppColors.border
+                            : AppColors.statusDitolakText.withValues(alpha: 0.4),
                       ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: gpsState.isInRadius
-                              ? AppColors.statusSudahBg
-                              : AppColors.statusDitolakBg,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Icon(
-                              gpsState.isInRadius
-                                  ? Icons.check_circle
-                                  : Icons.cancel,
-                              color: gpsState.isInRadius
-                                  ? AppColors.statusSudahText
-                                  : AppColors.statusDitolakText,
-                              size: 20,
+                            Text(
+                              'LOKASI GPS',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                                color: gpsState.isInRadius
+                                    ? AppColors.textSecondary
+                                    : AppColors.statusDitolakText,
+                              ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    gpsState.isInRadius
-                                        ? 'DALAM RADIUS CHECK-IN'
-                                        : 'DI LUAR RADIUS CHECK-IN',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w800,
-                                      color: gpsState.isInRadius
-                                          ? AppColors.statusSudahText
-                                          : AppColors.statusDitolakText,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Jarak Anda: ${gpsState.jarakM.toStringAsFixed(1)} m (Maks. ${config.radiusCheckinMeter} m)',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: gpsState.isInRadius
-                                          ? AppColors.statusSudahText
-                                          : AppColors.statusDitolakText,
-                                    ),
-                                  ),
-                                ],
+                            InkWell(
+                              key: const Key('gps_sim_toggle'),
+                              onTap: () =>
+                                  _toggleSimulasiGps(toko, gpsState.isInRadius),
+                              borderRadius: BorderRadius.circular(4),
+                              child: Icon(
+                                gpsState.isLoadingGps
+                                    ? Icons.sync
+                                    : Icons.my_location,
+                                size: 15,
+                                color: gpsState.isInRadius
+                                    ? AppColors.textSecondary
+                                    : AppColors.statusDitolakText,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                side: const BorderSide(color: AppColors.border),
-                              ),
-                              onPressed: () {
-                                ref
-                                    .read(kunjunganGpsProvider.notifier)
-                                    .perbaruiLokasi(toko);
-                              },
-                              child: const Text(
-                                'Simulasi Dekat (12 m)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Jarak ke toko ${gpsState.jarakM.round()} m',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: gpsState.isInRadius
+                                ? AppColors.textPrimary
+                                : AppColors.statusDitolakText,
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                side: const BorderSide(color: AppColors.border),
-                              ),
-                              onPressed: () {
-                                ref
-                                    .read(kunjunganGpsProvider.notifier)
-                                    .setSimulasiLuarRadius(toko);
-                              },
-                              child: const Text(
-                                'Simulasi Jauh (550 m)',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.statusDitolakText,
-                                ),
-                              ),
-                            ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          gpsState.isInRadius
+                              ? 'Anda berada di dalam radius check-in.'
+                              : 'Di luar radius check-in (maks. ${config.radiusCheckinMeter.round()} m).',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: gpsState.isInRadius
+                                ? AppColors.textSecondary
+                                : AppColors.statusDitolakText,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 14),
 
                 // Tombol Check-in di Toko Ini
                 PrimaryButton(
@@ -353,31 +246,14 @@ class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
                           context.push('/sales/kunjungan/wizard/${toko.noJo}')
                       : null,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10),
 
                 // Tombol Ajukan Reschedule
                 if (config.enableReschedule)
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: AppColors.salesOrange),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    icon: const Icon(
-                      Icons.event_repeat,
-                      color: AppColors.salesOrange,
-                      size: 20,
-                    ),
-                    label: const Text(
-                      'Ajukan Reschedule Jadwal',
-                      style: TextStyle(
-                        color: AppColors.salesOrange,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
+                  PrimaryButton(
+                    label: 'Ajukan Reschedule',
+                    isOutlined: true,
+                    backgroundColor: AppColors.salesOrange,
                     onPressed: () {
                       context.push('/sales/reschedule/tambah?noJo=${toko.noJo}');
                     },

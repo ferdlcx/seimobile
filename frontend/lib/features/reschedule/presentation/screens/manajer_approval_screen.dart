@@ -5,11 +5,13 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/format.dart';
 import '../../../../core/widgets/app_scaffold.dart';
+import '../../../../core/widgets/primary_button.dart';
 import '../../../../core/widgets/state_view.dart';
 import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/reschedule_provider.dart';
 
+/// Layar Approval Pengajuan Reschedule oleh Manajer Sales.
 class ManajerApprovalScreen extends ConsumerWidget {
   const ManajerApprovalScreen({super.key});
 
@@ -21,13 +23,13 @@ class ManajerApprovalScreen extends ConsumerWidget {
     final navItems = [
       const RoleNavItem(
         label: 'Beranda',
-        icon: Icons.dashboard_outlined,
+        icon: Icons.home_outlined,
         route: '/manajer/beranda',
       ),
       if (config.enableReschedule)
         const RoleNavItem(
           label: 'Reschedule',
-          icon: Icons.approval_outlined,
+          icon: Icons.calendar_today_outlined,
           route: '/manajer/reschedule',
         ),
       const RoleNavItem(
@@ -37,7 +39,7 @@ class ManajerApprovalScreen extends ConsumerWidget {
       ),
       const RoleNavItem(
         label: 'Laporan',
-        icon: Icons.bar_chart_outlined,
+        icon: Icons.description_outlined,
         route: '/manajer/laporan',
       ),
     ];
@@ -65,60 +67,54 @@ class ManajerApprovalScreen extends ConsumerWidget {
         errorMessage: state.errorMessage,
         onRetry: () => ref.read(rescheduleProvider.notifier).loadReschedule(),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
             const Text(
-              'Approval Reschedule Kunjungan',
+              'Approval reschedule',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             const Text(
-              'Satu aksi per pengajuan · Persetujuan perubahan jadwal rute sales',
+              'Satu aksi per pengajuan.',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11.5,
                 color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
-            // Bagian 1: Pengajuan Menunggu
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Menunggu Persetujuan',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
+            // Banner Sukses Inline (tampil setelah Setujui / Tolak)
+            if (state.successBanner != null) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.successBannerBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  state.successBanner!,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.successBannerText,
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.statusMenungguBg,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    '${menungguList.length} pengajuan',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.statusMenungguText,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
+              ),
+              const SizedBox(height: 12),
+            ],
 
+            // Daftar Pengajuan Menunggu
             if (menungguList.isEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 24),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -135,174 +131,95 @@ class ManajerApprovalScreen extends ConsumerWidget {
               )
             else
               ...menungguList.map((item) {
-                final lamaStr = AppFormat.formatTanggalSingkat(item.jadwalLama);
-                final baruStr = AppFormat.formatTanggalSingkat(item.jadwalBaru);
+                final tglBaruStr =
+                    AppFormat.formatTanggalHariSingkat(item.jadwalBaru);
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 0,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(
-                      color: AppColors.statusMenungguText,
-                      width: 1.2,
-                    ),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.namaToko,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                            StatusBadge.reschedule(item.status),
-                          ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.namaToko,
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Sales: ${item.salesNama} · No JO: ${item.noJo}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        'Pindah ke $tglBaruStr · ${item.alasan}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                          height: 1.35,
                         ),
-                        const Divider(height: 16),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_month,
-                              size: 16,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '$lamaStr  →  $baruStr',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Alasan: ${item.alasan}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: AppColors.statusDitolakText,
-                                  side: const BorderSide(
-                                    color: AppColors.statusDitolakText,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  final ok = await ref
-                                      .read(rescheduleProvider.notifier)
-                                      .prosesPersetujuan(
-                                        id: item.id,
-                                        disetujui: false,
-                                      );
-                                  if (ok && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Reschedule ditolak.'),
-                                        backgroundColor: Colors.red,
-                                      ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: PrimaryButton(
+                              label: 'Setujui',
+                              height: 38,
+                              backgroundColor: AppColors.manajerBlue,
+                              onPressed: () {
+                                ref
+                                    .read(rescheduleProvider.notifier)
+                                    .prosesPersetujuan(
+                                      id: item.id,
+                                      disetujui: true,
                                     );
-                                  }
-                                },
-                                child: const Text(
-                                  'Tolak',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                              ),
+                              },
                             ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.statusSudahText,
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  final ok = await ref
-                                      .read(rescheduleProvider.notifier)
-                                      .prosesPersetujuan(
-                                        id: item.id,
-                                        disetujui: true,
-                                      );
-                                  if (ok && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Reschedule disetujui. Jadwal sales diperbarui.',
-                                        ),
-                                        backgroundColor:
-                                            AppColors.statusSudahText,
-                                      ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: PrimaryButton(
+                              label: 'Tolak',
+                              height: 38,
+                              isOutlined: true,
+                              backgroundColor: AppColors.manajerBlue,
+                              onPressed: () {
+                                ref
+                                    .read(rescheduleProvider.notifier)
+                                    .prosesPersetujuan(
+                                      id: item.id,
+                                      disetujui: false,
                                     );
-                                  }
-                                },
-                                child: const Text(
-                                  'Setujui',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                              ),
+                              },
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 );
               }),
-            const SizedBox(height: 20),
+            const SizedBox(height: 8),
 
-            // Bagian 2: Sudah Diproses
+            // Bagian Sudah Diproses
             const Text(
-              'Sudah Diproses',
+              'SUDAH DIPROSES',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: AppColors.textPrimary,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.6,
+                color: AppColors.textSecondary,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
 
             if (diprosesList.isEmpty)
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 24),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -319,48 +236,47 @@ class ManajerApprovalScreen extends ConsumerWidget {
               )
             else
               ...diprosesList.map((item) {
-                final lamaStr = AppFormat.formatTanggalSingkat(item.jadwalLama);
-                final baruStr = AppFormat.formatTanggalSingkat(item.jadwalBaru);
+                final tglBaruStr =
+                    AppFormat.formatTanggalHariSingkat(item.jadwalBaru);
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  elevation: 0,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    side: const BorderSide(color: AppColors.border),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 11,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                item.namaToko,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
+                            Text(
+                              item.namaToko,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
                               ),
                             ),
-                            StatusBadge.reschedule(item.status),
+                            const SizedBox(height: 2),
+                            Text(
+                              tglBaruStr,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Sales: ${item.salesNama} · $lamaStr → $baruStr',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      StatusBadge.reschedule(item.status),
+                    ],
                   ),
                 );
               }),

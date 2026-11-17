@@ -11,6 +11,7 @@ import '../../../../core/widgets/status_badge.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/reschedule_provider.dart';
 
+/// Layar Daftar Pengajuan Reschedule oleh Sales.
 class SalesRescheduleScreen extends ConsumerWidget {
   const SalesRescheduleScreen({super.key});
 
@@ -61,73 +62,33 @@ class SalesRescheduleScreen extends ConsumerWidget {
         errorMessage: state.errorMessage,
         onRetry: () => ref.read(rescheduleProvider.notifier).loadReschedule(),
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
-            // Banner Info Desain PNG
-            Container(
-              margin: const EdgeInsets.only(bottom: 14),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: AppColors.textSecondary,
-                    size: 18,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Jadwal berubah, toko tidak bisa dikunjungi sesuai mapping.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
+            const Text(
+              'Reschedule',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
               ),
             ),
+            const SizedBox(height: 4),
+            const Text(
+              'Jadwal berubah, toko tidak bisa dikunjungi sesuai mapping.',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
 
-            // Baris Judul & Tombol Pengajuan Baru
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Daftar Pengajuan Reschedule',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Perubahan jadwal kunjungan toko',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-                PrimaryButton(
-                  label: '+ Pengajuan Baru',
-                  width: 150,
-                  backgroundColor: AppColors.salesOrange,
-                  onPressed: () => context.push('/sales/reschedule/tambah'),
-                ),
-              ],
+            // Tombol Full-Width di atas daftar pengajuan
+            PrimaryButton(
+              label: '+ Buat Pengajuan Reschedule Baru',
+              backgroundColor: AppColors.salesOrange,
+              onPressed: () => context.push('/sales/reschedule/tambah'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             if (state.items.isEmpty)
               Container(
@@ -143,77 +104,53 @@ class SalesRescheduleScreen extends ConsumerWidget {
               )
             else
               ...state.items.map((item) {
-                final lamaStr = AppFormat.formatTanggalSingkat(item.jadwalLama);
-                final baruStr = AppFormat.formatTanggalSingkat(item.jadwalBaru);
+                final tglBaru =
+                    AppFormat.formatTanggalHariSingkat(item.jadwalBaru);
+                final subtitleText = item.status.toLowerCase() == 'menunggu'
+                    ? 'Pindah ke $tglBaru'
+                    : '$tglBaru · ${item.alasan}';
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 0,
-                  color: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(color: AppColors.border),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 11,
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item.namaToko,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.namaToko,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
                               ),
                             ),
-                            StatusBadge.reschedule(item.status),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'No JO: ${item.noJo}',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textSecondary,
                           ),
+                          const SizedBox(width: 8),
+                          StatusBadge.reschedule(item.status),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        subtitleText,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                          height: 1.35,
                         ),
-                        const Divider(height: 16),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.calendar_month,
-                              size: 16,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '$lamaStr  →  $baruStr',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Alasan: ${item.alasan}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 );
               }),

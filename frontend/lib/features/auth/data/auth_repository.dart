@@ -26,5 +26,7 @@ abstract class AuthRepository {
 
   Future<AuthSession?> me();
 
+  Future<void> updateMode(String mode);
+
   Future<void> simpanTandaTangan(String base64Signature);
 }

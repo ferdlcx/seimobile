@@ -43,50 +43,51 @@ class LoginBerhasilScreen extends ConsumerWidget {
 
     return AppScaffold(
       roleLabel: roleLabel,
-      menuTitle: 'Validasi Akses',
+      menuTitle: 'Validasi akses',
+      customSubtitle: 'Validasi akses',
       accentColor: accentColor,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Lingkaran Centang Hijau
               Container(
-                width: 72,
-                height: 72,
+                width: 56,
+                height: 56,
                 decoration: const BoxDecoration(
                   color: AppColors.statusSudahBg,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_rounded,
-                  size: 40,
+                  size: 28,
                   color: AppColors.statusSudahText,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
               // Judul & Deskripsi
               const Text(
                 'Login berhasil',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 'Sistem mencocokkan akun dengan peran $roleLabel. Hak akses dibuka sesuai peran.',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 13,
+                  fontSize: 11.5,
                   color: AppColors.textSecondary,
-                  height: 1.4,
+                  height: 1.45,
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
 
               // Tombol Langsung Masuk
               PrimaryButton(

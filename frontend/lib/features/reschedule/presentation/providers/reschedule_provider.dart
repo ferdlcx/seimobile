@@ -6,12 +6,14 @@ class RescheduleState {
   final List<PengajuanReschedule> items;
   final bool isLoading;
   final String? errorMessage;
+  final String? successBanner;
   final bool isSubmitting;
 
   const RescheduleState({
     this.items = const [],
     this.isLoading = false,
     this.errorMessage,
+    this.successBanner,
     this.isSubmitting = false,
   });
 
@@ -19,13 +21,17 @@ class RescheduleState {
     List<PengajuanReschedule>? items,
     bool? isLoading,
     String? errorMessage,
+    String? successBanner,
     bool? isSubmitting,
     bool clearError = false,
+    bool clearBanner = false,
   }) {
     return RescheduleState(
       items: items ?? this.items,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      successBanner:
+          clearBanner ? null : (successBanner ?? this.successBanner),
       isSubmitting: isSubmitting ?? this.isSubmitting,
     );
   }
@@ -36,6 +42,10 @@ class RescheduleNotifier extends Notifier<RescheduleState> {
   RescheduleState build() {
     Future.microtask(() => loadReschedule());
     return const RescheduleState(isLoading: true);
+  }
+
+  void clearBanner() {
+    state = state.copyWith(clearBanner: true);
   }
 
   Future<void> loadReschedule() async {
@@ -57,7 +67,11 @@ class RescheduleNotifier extends Notifier<RescheduleState> {
     required DateTime jadwalBaru,
     required String alasan,
   }) async {
-    state = state.copyWith(isSubmitting: true, clearError: true);
+    state = state.copyWith(
+      isSubmitting: true,
+      clearError: true,
+      clearBanner: true,
+    );
     try {
       final repo = ref.read(rescheduleRepositoryProvider);
       final baru = await repo.create(
@@ -90,8 +104,14 @@ class RescheduleNotifier extends Notifier<RescheduleState> {
           ? await repo.setujui(id)
           : await repo.tolak(id);
 
+      final banner = disetujui
+          ? 'Reschedule disetujui. Jadwal sales diperbarui.'
+          : 'Reschedule ditolak.';
+
       state = state.copyWith(
-        items: state.items.map((item) => item.id == id ? updated : item).toList(),
+        items:
+            state.items.map((item) => item.id == id ? updated : item).toList(),
+        successBanner: banner,
       );
       return true;
     } catch (e) {

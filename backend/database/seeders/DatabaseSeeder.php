@@ -121,7 +121,16 @@ class DatabaseSeeder extends Seeder
             ],
         ];
 
-        foreach ($tokoData as $t) {
+        $polaBulan = [
+            [false, true, true, false, true, true, false, true, true, true, true, true],
+            [true, true, false, true, true, false, true, true, false, true, true, false],
+            [true, false, true, true, false, true, true, false, true, true, false, true],
+            [false, true, true, false, true, true, false, true, true, true, true, true],
+            [true, true, false, true, true, false, true, true, false, true, true, false],
+            [true, false, true, true, false, true, true, false, true, true, false, true],
+        ];
+
+        foreach ($tokoData as $idx => $t) {
             $sudahOkt = $t['sudah_dikunjungi_okt'];
             unset($t['sudah_dikunjungi_okt']);
             $toko = Toko::create($t);
@@ -134,18 +143,23 @@ class DatabaseSeeder extends Seeder
                 'tahun' => 2026,
             ]);
 
+            $pola = $polaBulan[$idx % count($polaBulan)];
+
             // Bulan 1–12
             for ($b = 1; $b <= 12; $b++) {
+                $direncanakan = $pola[$b - 1];
                 $terealisasi = false;
-                if ($b < 10) {
-                    $terealisasi = true; // Jan-Sep terealisasi
-                } elseif ($b === 10) {
-                    $terealisasi = $sudahOkt; // Okt: 4 dari 6 sudah, 2 belum
+                if ($direncanakan) {
+                    if ($b < 10) {
+                        $terealisasi = true; // Jan-Sep terealisasi
+                    } elseif ($b === 10) {
+                        $terealisasi = $sudahOkt; // Okt: 4 dari 6 sudah, 2 belum
+                    }
                 }
                 MappingBulan::create([
                     'id_mapping' => $mapping->id_mapping,
                     'bulan' => $b,
-                    'direncanakan' => true,
+                    'direncanakan' => $direncanakan,
                     'terealisasi' => $terealisasi,
                 ]);
             }

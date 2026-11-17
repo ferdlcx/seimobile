@@ -96,68 +96,51 @@ class AdminAkunScreen extends ConsumerWidget {
         errorMessage: state.errorMessage,
         onRetry: () => ref.read(akunProvider.notifier).loadAkun(),
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
-            const Text(
-              'Akun & hak akses',
-              style: TextStyle(
-                fontSize: 18,
+            Text(
+              state.successBanner != null
+                  ? 'Akun berhasil ditambahkan'
+                  : 'Akun & hak akses',
+              style: const TextStyle(
+                fontSize: 17,
                 fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
-            const Text(
-              'Admin membuat akun karena pengguna tidak bisa mendaftar sendiri.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
+            if (state.successBanner == null) ...[
+              const Text(
+                'Admin membuat akun karena pengguna tidak bisa mendaftar sendiri.',
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Banner Sukses jika baru tambah akun
-            if (state.successBanner != null) ...[
+              const SizedBox(height: 14),
+            ] else ...[
+              const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.successBannerBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.successBannerBorder),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline,
-                      size: 20,
-                      color: AppColors.successBannerText,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        state.successBanner!,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.successBannerText,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () =>
-                          ref.read(akunProvider.notifier).clearBanner(),
-                      child: const Icon(
-                        Icons.close,
-                        size: 16,
-                        color: AppColors.successBannerText,
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  'Notifikasi dikirim: akun baru sudah muncul dengan label BARU.',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.successBannerText,
+                    fontWeight: FontWeight.w500,
+                    height: 1.35,
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
 
             // Daftar Akun
@@ -167,7 +150,7 @@ class AdminAkunScreen extends ConsumerWidget {
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
-                  vertical: 12,
+                  vertical: 10,
                 ),
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -180,50 +163,50 @@ class AdminAkunScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Flexible(
-                                child: Text(
-                                  akun.nama,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              if (akun.isBaru) ...[
-                                const SizedBox(width: 8),
-                                const StatusBadge(
-                                  text: 'BARU',
-                                  type: StatusBadgeType.baru,
-                                ),
-                              ],
-                            ],
+                          Text(
+                            akun.nama,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
                           Text(
                             '${akun.labelPeran} · $statusText',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: akun.aktif
-                                  ? AppColors.textSecondary
-                                  : AppColors.statusDitolakText,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textSecondary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Switch(
-                      value: akun.aktif,
-                      activeTrackColor: AppColors.adminTeal,
-                      onChanged: (val) => _handleToggleAktif(
-                        context,
-                        ref,
-                        akun.id,
-                        akun.nama,
-                        akun.aktif,
+                    if (akun.isBaru) ...[
+                      const StatusBadge(
+                        text: 'BARU',
+                        type: StatusBadgeType.baru,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Transform.scale(
+                      scale: 0.85,
+                      child: Switch(
+                        value: akun.aktif,
+                        activeThumbColor: Colors.white,
+                        activeTrackColor: AppColors.adminTeal,
+                        inactiveThumbColor: Colors.white,
+                        inactiveTrackColor: AppColors.border,
+                        trackOutlineColor:
+                            WidgetStateProperty.all(Colors.transparent),
+                        onChanged: (val) => _handleToggleAktif(
+                          context,
+                          ref,
+                          akun.id,
+                          akun.nama,
+                          akun.aktif,
+                        ),
                       ),
                     ),
                   ],
@@ -231,11 +214,14 @@ class AdminAkunScreen extends ConsumerWidget {
               );
             }),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
             PrimaryButton(
               label: '+ Tambah Akun',
               backgroundColor: AppColors.adminTeal,
-              onPressed: () => context.go('/admin/akun/tambah'),
+              onPressed: () {
+                ref.read(akunProvider.notifier).clearBanner();
+                context.go('/admin/akun/tambah');
+              },
             ),
           ],
         ),

@@ -56,6 +56,18 @@ class MockAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> updateMode(String mode) async {
+    final current = db.currentSession;
+    if (current != null) {
+      db.currentSession = AuthSession(
+        token: current.token,
+        user: current.user,
+        mode: mode,
+      );
+    }
+  }
+
+  @override
   Future<void> simpanTandaTangan(String base64Signature) async {
     await db.simulateNetworkDelay();
     final current = db.currentSession;
