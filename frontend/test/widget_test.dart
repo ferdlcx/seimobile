@@ -506,7 +506,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      expect(find.text('Pengajuan reschedule'), findsOneWidget);
+      expect(
+        find.text('Jadwal berubah, toko tidak bisa dikunjungi sesuai mapping.'),
+        findsOneWidget,
+      );
 
       // Klik "+ Buat Pengajuan Reschedule Baru"
       await tester.tap(find.text('+ Buat Pengajuan Reschedule Baru'));
@@ -530,12 +533,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      // Kembali ke daftar pengajuan
-      expect(find.text('Pengajuan reschedule'), findsOneWidget);
+      // Kembali ke daftar pengajuan (2 menunggu awal + 1 baru = 3 Menunggu)
       expect(
-        find.textContaining('Pemilik toko sedang di luar kota hingga lusa.'),
+        find.text('Jadwal berubah, toko tidak bisa dikunjungi sesuai mapping.'),
         findsOneWidget,
       );
+      expect(find.text('Menunggu'), findsNWidgets(3));
     });
 
     testWidgets('Sales Kondite Saya: tampilkan lembar 18 kriteria read-only', (tester) async {
