@@ -36,27 +36,45 @@ class SqliteMappingRepository implements MappingRepository {
     final existingCount =
         (existingCountRows.first['cnt'] as int?) ?? 0;
 
-    if (existingCount == 0) {
-      final tokoRows = await db.query('toko', orderBy: 'rowid ASC');
+    final missingTokoRows = await db.rawQuery('''
+      SELECT no_jo FROM toko
+      WHERE no_jo NOT IN (
+        SELECT no_jo FROM mapping_toko WHERE id_sales = ? AND tahun = ?
+      )
+      ORDER BY rowid ASC
+    ''', [salesId, tahun]);
+
+    if (missingTokoRows.isNotEmpty) {
       await db.transaction((txn) async {
-        for (int i = 0; i < tokoRows.length; i++) {
-          final noJo = tokoRows[i]['no_jo'] as String;
+        for (int i = 0; i < missingTokoRows.length; i++) {
+          final noJo = missingTokoRows[i]['no_jo'] as String;
           final idMapping = await txn.insert('mapping_toko', {
             'id_admin': 1,
             'id_sales': salesId,
             'no_jo': noJo,
             'tahun': tahun,
           });
-          final rencana = _polaDefault[i % _polaDefault.length];
-          for (int m = 0; m < 12; m++) {
-            final planned = rencana[m];
-            final realized = !planned ? false : (m < 9);
-            await txn.insert('mapping_bulan', {
-              'id_mapping': idMapping,
-              'bulan': m + 1,
-              'direncanakan': planned ? 1 : 0,
-              'terealisasi': realized ? 1 : 0,
-            });
+          if (existingCount == 0) {
+            final rencana = _polaDefault[i % _polaDefault.length];
+            for (int m = 0; m < 12; m++) {
+              final planned = rencana[m];
+              final realized = !planned ? false : (m < 9);
+              await txn.insert('mapping_bulan', {
+                'id_mapping': idMapping,
+                'bulan': m + 1,
+                'direncanakan': planned ? 1 : 0,
+                'terealisasi': realized ? 1 : 0,
+              });
+            }
+          } else {
+            for (int m = 1; m <= 12; m++) {
+              await txn.insert('mapping_bulan', {
+                'id_mapping': idMapping,
+                'bulan': m,
+                'direncanakan': 1,
+                'terealisasi': 0,
+              });
+            }
           }
         }
       });

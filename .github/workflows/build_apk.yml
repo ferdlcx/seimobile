@@ -63,17 +63,18 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.0
-          name: S.E.U.I Centre v1.1.0
+          tag_name: v1.2.0
+          name: S.E.U.I Centre v1.2.0
           body: |
-            ## S.E.U.I Centre Mobile - Release v1.1.0
+            ## S.E.U.I Centre Mobile - Release v1.2.0
             Aplikasi murni Dart & Flutter dengan database SQLite lokal persisten (`seui_centre.db`).
 
-            ### Fitur Utama:
-            - **Database SQLite Nyata (Pure Dart/Flutter)**: Seluruh data akun, toko, mapping 12 bulan, jurnal kunjungan + foto, reschedule/approval, serta penilaian kondite 18 kriteria tersimpan permanen di perangkat tanpa membutuhkan server PHP.
-            - **Admin Tagihan**: Akun & Hak Akses, Master Data (Toko, Sales, Wilayah, Kriteria), Susun Mapping Grid GitHub-style (12 Bulan), Laporan Rekap & Cetak PDF.
-            - **Sales**: Mapping Hari Ini, GPS Check-in Radius 50m, Wizard Jurnal Kunjungan (Ada Order / Tidak Ada Order / Toko Tutup + Foto PO & Display), Pengajuan Reschedule, Lembar Kondite Saya (18 Kriteria Read-only).
-            - **Manajer Sales**: Monitoring Beranda (Kunjungan, Order, Reschedule), Mode Sales Merangkap, Approval Reschedule, Penilaian Kondite 18 Kriteria Dinamis & Cetak Dokumen Resmi PDF ber-TTD Digital.
+            ### Perbaikan & Peningkatan Alur Kerja:
+            - **Sinkronisasi Real-time Lintas Peran & Layar**: Penambahan akun Sales, wilayah, toko baru, mapping, jurnal, maupun approval reschedule langsung sinkron tanpa perlu menutup atau me-restart aplikasi.
+            - **Kelola Wilayah**: Admin Tagihan kini dapat langsung menambah data **Wilayah** dari menu Data Master -> tab Wilayah.
+            - **Pilih Sales di Susun Mapping**: Admin Tagihan dapat memilih sales aktif saat menyusun mapping toko 12 bulan.
+            - **Jenis Aktivitas & Edit Jurnal Sales**: Form jurnal kini mendukung pilihan aktivitas (**Kunjungan & Order**, **Pengambilan Barang**, **Penagihan**) serta pengeditan jurnal final yang sudah dibuat.
+            - **Mode Rangkap Manajer Sales**: Tombol kembali ke Mode Manajer langsung tersedia di layar Mapping Sales.
 
             ### Unduhan APK:
             Unduh file `app-release.apk` di bawah ini dan instal langsung di perangkat Android Anda.

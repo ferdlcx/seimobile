@@ -28,6 +28,7 @@ class ApiJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan> create({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -41,6 +42,7 @@ class ApiJurnalRepository implements JurnalRepository {
       data: {
         'no_jo': noJo,
         'status_order': hasil.jsonValue,
+        'jenis_aktivitas': jenisAktivitas,
         'ket_aktivitas': catatan,
         'lat': lat,
         'lng': lng,
@@ -55,6 +57,7 @@ class ApiJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan> saveDraft({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -68,6 +71,7 @@ class ApiJurnalRepository implements JurnalRepository {
       data: {
         'no_jo': noJo,
         'status_order': hasil.jsonValue,
+        'jenis_aktivitas': jenisAktivitas,
         'ket_aktivitas': catatan,
         'lat': lat,
         'lng': lng,
@@ -82,6 +86,39 @@ class ApiJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan?> getDraft(String noJo) async {
     // TODO(backend): Ambil draft lokal atau dari API
     return null;
+  }
+
+  @override
+  Future<JurnalKunjungan?> getLatestFinal(String noJo) async {
+    // TODO(backend): Ambil jurnal final terakhir untuk noJo
+    final items = await list();
+    final matches = items.where((j) => j.noJo == noJo);
+    return matches.isNotEmpty ? matches.first : null;
+  }
+
+  @override
+  Future<JurnalKunjungan> updateFinal({
+    required int id,
+    required String noJo,
+    required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
+    required String catatan,
+    String? fotoDisplay,
+    String? fotoNotaPo,
+  }) async {
+    // TODO(backend): Hubungkan ke PUT /api/v1/jurnal/{id}
+    final res = await client.dio.put<Map<String, dynamic>>(
+      '/jurnal/$id',
+      data: {
+        'no_jo': noJo,
+        'status_order': hasil.jsonValue,
+        'jenis_aktivitas': jenisAktivitas,
+        'ket_aktivitas': catatan,
+        'foto_display': fotoDisplay,
+        'foto_nota_po': fotoNotaPo,
+      },
+    );
+    return JurnalKunjungan.fromJson(res.data!['data'] as Map<String, dynamic>);
   }
 
   @override

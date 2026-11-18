@@ -4,6 +4,11 @@ import '../../../../core/config/app_config.dart';
 import '../../../../core/providers/repository_providers.dart';
 import '../../../../core/utils/haversine.dart';
 import '../../../admin_data/data/models/master_models.dart';
+import '../../../admin_data/presentation/providers/master_data_provider.dart';
+import '../../../laporan/presentation/providers/laporan_provider.dart';
+import '../../../mapping/presentation/providers/mapping_admin_provider.dart';
+import '../../../mapping/presentation/providers/mapping_hari_ini_provider.dart';
+import '../../../monitoring/presentation/providers/monitoring_provider.dart';
 import '../../data/models/jurnal_kunjungan_model.dart';
 
 class KunjunganGpsState {
@@ -154,7 +159,9 @@ final kunjunganGpsProvider =
 );
 
 class JurnalFormState {
+  final int? editingJournalId;
   final HasilKunjungan hasil;
+  final String jenisAktivitas;
   final String catatan;
   final String? fotoDisplay;
   final String? fotoNotaPo;
@@ -163,7 +170,9 @@ class JurnalFormState {
   final bool isSuccessFinal;
 
   const JurnalFormState({
+    this.editingJournalId,
     this.hasil = HasilKunjungan.adaOrder,
+    this.jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     this.catatan = '',
     this.fotoDisplay,
     this.fotoNotaPo,
@@ -173,7 +182,10 @@ class JurnalFormState {
   });
 
   JurnalFormState copyWith({
+    int? editingJournalId,
+    bool clearEditingId = false,
     HasilKunjungan? hasil,
+    String? jenisAktivitas,
     String? catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -183,7 +195,11 @@ class JurnalFormState {
     bool? isSuccessFinal,
   }) {
     return JurnalFormState(
+      editingJournalId: clearEditingId
+          ? null
+          : (editingJournalId ?? this.editingJournalId),
       hasil: hasil ?? this.hasil,
+      jenisAktivitas: jenisAktivitas ?? this.jenisAktivitas,
       catatan: catatan ?? this.catatan,
       fotoDisplay: fotoDisplay ?? this.fotoDisplay,
       fotoNotaPo: fotoNotaPo ?? this.fotoNotaPo,
@@ -204,6 +220,10 @@ class JurnalFormNotifier extends Notifier<JurnalFormState> {
     state = state.copyWith(hasil: hasil);
   }
 
+  void setJenisAktivitas(String jenisAktivitas) {
+    state = state.copyWith(jenisAktivitas: jenisAktivitas);
+  }
+
   void setCatatan(String catatan) {
     state = state.copyWith(catatan: catatan);
   }
@@ -216,12 +236,34 @@ class JurnalFormNotifier extends Notifier<JurnalFormState> {
     state = state.copyWith(fotoNotaPo: path);
   }
 
+  Future<void> loadForWizard(String noJo, {int? editId}) async {
+    state = const JurnalFormState();
+    final repo = ref.read(jurnalRepositoryProvider);
+    if (editId != null) {
+      final latest = await repo.getLatestFinal(noJo);
+      if (latest != null) {
+        state = JurnalFormState(
+          editingJournalId: latest.id,
+          hasil: latest.hasil,
+          jenisAktivitas: latest.jenisAktivitas,
+          catatan: latest.catatan,
+          fotoDisplay: latest.fotoDisplay,
+          fotoNotaPo: latest.fotoNotaPo,
+        );
+        return;
+      }
+    }
+    await loadDraft(noJo);
+  }
+
   Future<void> loadDraft(String noJo) async {
     final repo = ref.read(jurnalRepositoryProvider);
     final draft = await repo.getDraft(noJo);
     if (draft != null) {
       state = state.copyWith(
+        clearEditingId: true,
         hasil: draft.hasil,
+        jenisAktivitas: draft.jenisAktivitas,
         catatan: draft.catatan,
         fotoDisplay: draft.fotoDisplay,
         fotoNotaPo: draft.fotoNotaPo,
@@ -241,6 +283,7 @@ class JurnalFormNotifier extends Notifier<JurnalFormState> {
       await repo.saveDraft(
         noJo: noJo,
         hasil: state.hasil,
+        jenisAktivitas: state.jenisAktivitas,
         catatan: state.catatan,
         fotoDisplay: state.fotoDisplay,
         fotoNotaPo: state.fotoNotaPo,
@@ -257,6 +300,14 @@ class JurnalFormNotifier extends Notifier<JurnalFormState> {
     }
   }
 
+  void _invalidateAfterJournalChange() {
+    ref.invalidate(mappingHariIniProvider);
+    ref.invalidate(masterDataProvider);
+    ref.invalidate(mappingAdminProvider);
+    ref.invalidate(monitoringProvider);
+    ref.invalidate(laporanProvider);
+  }
+
   Future<bool> simpanFinal({
     required String noJo,
     required double lat,
@@ -269,6 +320,7 @@ class JurnalFormNotifier extends Notifier<JurnalFormState> {
       await repo.create(
         noJo: noJo,
         hasil: state.hasil,
+        jenisAktivitas: state.jenisAktivitas,
         catatan: state.catatan,
         fotoDisplay: state.fotoDisplay,
         fotoNotaPo: state.fotoNotaPo,
@@ -277,6 +329,32 @@ class JurnalFormNotifier extends Notifier<JurnalFormState> {
         jarakM: jarakM,
       );
       state = state.copyWith(isLoading: false, isSuccessFinal: true);
+      _invalidateAfterJournalChange();
+      return true;
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      return false;
+    }
+  }
+
+  Future<bool> simpanPerubahan({required String noJo}) async {
+    final editId = state.editingJournalId;
+    if (editId == null) return false;
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final repo = ref.read(jurnalRepositoryProvider);
+      await repo.updateFinal(
+        id: editId,
+        noJo: noJo,
+        hasil: state.hasil,
+        jenisAktivitas: state.jenisAktivitas,
+        catatan: state.catatan,
+        fotoDisplay: state.fotoDisplay,
+        fotoNotaPo: state.fotoNotaPo,
+      );
+      state = state.copyWith(isLoading: false, isSuccessFinal: true);
+      _invalidateAfterJournalChange();
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');

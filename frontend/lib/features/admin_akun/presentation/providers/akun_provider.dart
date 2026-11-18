@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/repository_providers.dart';
+import '../../../admin_data/presentation/providers/master_data_provider.dart';
 import '../../../auth/data/models/pengguna_model.dart';
+import '../../../kondite/presentation/providers/manajer_kondite_provider.dart';
+import '../../../mapping/presentation/providers/mapping_admin_provider.dart';
 
 class AkunState {
   final List<Pengguna> akunList;
@@ -75,6 +78,9 @@ class AkunNotifier extends Notifier<AkunState> {
         successBanner:
             'Akun berhasil ditambahkan. Notifikasi dikirim: akun baru sudah muncul dengan label BARU.',
       );
+      ref.invalidate(masterDataProvider);
+      ref.invalidate(mappingAdminProvider);
+      ref.invalidate(manajerKonditeProvider);
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -90,6 +96,9 @@ class AkunNotifier extends Notifier<AkunState> {
       state = state.copyWith(
         akunList: state.akunList.map((a) => a.id == id ? updated : a).toList(),
       );
+      ref.invalidate(masterDataProvider);
+      ref.invalidate(mappingAdminProvider);
+      ref.invalidate(manajerKonditeProvider);
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
       state = state.copyWith(errorMessage: msg);

@@ -16,10 +16,12 @@ import '../providers/kunjungan_provider.dart';
 /// Step 1: ORDER & BUKTI 3/3
 class WizardJurnalScreen extends ConsumerStatefulWidget {
   final String noJo;
+  final int? editId;
 
   const WizardJurnalScreen({
     super.key,
     required this.noJo,
+    this.editId,
   });
 
   @override
@@ -36,11 +38,9 @@ class _WizardJurnalScreenState extends ConsumerState<WizardJurnalScreen> {
     _catatanController = TextEditingController();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final notifier = ref.read(jurnalFormProvider.notifier);
-      await notifier.loadDraft(widget.noJo);
+      await notifier.loadForWizard(widget.noJo, editId: widget.editId);
       final current = ref.read(jurnalFormProvider);
-      if (current.catatan.isNotEmpty) {
-        _catatanController.text = current.catatan;
-      }
+      _catatanController.text = current.catatan;
     });
   }
 
@@ -65,6 +65,7 @@ class _WizardJurnalScreenState extends ConsumerState<WizardJurnalScreen> {
     final gpsState = ref.watch(kunjunganGpsProvider);
     final masterState = ref.watch(masterDataProvider);
     final config = ref.watch(appConfigProvider);
+    final isEditMode = formState.editingJournalId != null;
 
     final toko = masterState.tokoList.firstWhere(
       (t) => t.noJo == widget.noJo,
@@ -151,6 +152,30 @@ class _WizardJurnalScreenState extends ConsumerState<WizardJurnalScreen> {
           ),
           const SizedBox(height: 12),
 
+          if (isEditMode)
+            Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.edit_outlined, size: 15, color: Color(0xFF92400E)),
+                  SizedBox(width: 6),
+                  Text(
+                    'Edit Jurnal Kunjungan',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF92400E),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           if (formState.errorMessage != null)
             Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -219,6 +244,30 @@ class _WizardJurnalScreenState extends ConsumerState<WizardJurnalScreen> {
             ),
             const SizedBox(height: 16),
 
+            const Text(
+              'JENIS AKTIVITAS',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ...JenisAktivitasKunjungan.values.map((aktivitas) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _HasilRadioCard(
+                  label: aktivitas,
+                  selected: formState.jenisAktivitas == aktivitas,
+                  onTap: () => ref
+                      .read(jurnalFormProvider.notifier)
+                      .setJenisAktivitas(aktivitas),
+                ),
+              );
+            }),
+            const SizedBox(height: 8),
+
             PrimaryButton(
               label: 'Lanjut',
               backgroundColor: AppColors.salesOrange,
@@ -248,31 +297,56 @@ class _WizardJurnalScreenState extends ConsumerState<WizardJurnalScreen> {
             ),
             const SizedBox(height: 8),
 
-            // Badge hasil terpilih (bisa diketuk untuk ubah ke langkah 1)
-            Align(
-              alignment: Alignment.centerLeft,
-              child: InkWell(
-                onTap: () => setState(() => _currentStep = 0),
-                borderRadius: BorderRadius.circular(999),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDBEAFE),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    _hasilLabel(formState.hasil),
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.manajerBlue,
+            // Badge hasil & aktivitas terpilih (ketuk untuk kembali ke langkah 1)
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                InkWell(
+                  onTap: () => setState(() => _currentStep = 0),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDBEAFE),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      _hasilLabel(formState.hasil),
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.manajerBlue,
+                      ),
                     ),
                   ),
                 ),
-              ),
+                InkWell(
+                  onTap: () => setState(() => _currentStep = 0),
+                  borderRadius: BorderRadius.circular(999),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      formState.jenisAktivitas,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.salesOrange,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
 
@@ -324,61 +398,75 @@ class _WizardJurnalScreenState extends ConsumerState<WizardJurnalScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Tombol Simpan Jurnal Kunjungan
+            // Tombol Simpan Jurnal Kunjungan / Simpan Perubahan
             PrimaryButton(
-              label: 'Simpan Jurnal Kunjungan',
+              label: isEditMode
+                  ? 'Simpan Perubahan Jurnal'
+                  : 'Simpan Jurnal Kunjungan',
               backgroundColor: AppColors.salesOrange,
               isLoading: formState.isLoading,
               onPressed: () async {
-                final ok =
-                    await ref.read(jurnalFormProvider.notifier).simpanFinal(
-                          noJo: widget.noJo,
-                          lat: gpsState.currentLat,
-                          lng: gpsState.currentLng,
-                          jarakM: gpsState.jarakM,
-                        );
+                final notifier = ref.read(jurnalFormProvider.notifier);
+                final ok = isEditMode
+                    ? await notifier.simpanPerubahan(noJo: widget.noJo)
+                    : await notifier.simpanFinal(
+                        noJo: widget.noJo,
+                        lat: gpsState.currentLat,
+                        lng: gpsState.currentLng,
+                        jarakM: gpsState.jarakM,
+                      );
                 if (ok && context.mounted) {
                   ref
                       .read(mappingHariIniProvider.notifier)
                       .loadMappingHariIni();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Jurnal kunjungan berhasil disimpan.'),
+                    SnackBar(
+                      content: Text(
+                        isEditMode
+                            ? 'Perubahan jurnal berhasil disimpan.'
+                            : 'Jurnal kunjungan berhasil disimpan.',
+                      ),
                       backgroundColor: AppColors.salesOrange,
                     ),
                   );
-                  context.go('/sales/kunjungan');
+                  if (isEditMode) {
+                    context.pop();
+                  } else {
+                    context.go('/sales/kunjungan');
+                  }
                 }
               },
             ),
-            const SizedBox(height: 8),
+            if (!isEditMode) ...[
+              const SizedBox(height: 8),
 
-            // Tombol Simpan Sebagai Draft
-            PrimaryButton(
-              label: 'Simpan Sebagai Draft',
-              isSoftSecondary: true,
-              onPressed: formState.isLoading
-                  ? null
-                  : () async {
-                      final ok = await ref
-                          .read(jurnalFormProvider.notifier)
-                          .simpanDraft(
-                            noJo: widget.noJo,
-                            lat: gpsState.currentLat,
-                            lng: gpsState.currentLng,
-                            jarakM: gpsState.jarakM,
-                          );
-                      if (ok && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Draft kunjungan berhasil disimpan di perangkat.',
+              // Tombol Simpan Sebagai Draft
+              PrimaryButton(
+                label: 'Simpan Sebagai Draft',
+                isSoftSecondary: true,
+                onPressed: formState.isLoading
+                    ? null
+                    : () async {
+                        final ok = await ref
+                            .read(jurnalFormProvider.notifier)
+                            .simpanDraft(
+                              noJo: widget.noJo,
+                              lat: gpsState.currentLat,
+                              lng: gpsState.currentLng,
+                              jarakM: gpsState.jarakM,
+                            );
+                        if (ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Draft kunjungan berhasil disimpan di perangkat.',
+                              ),
                             ),
-                          ),
-                        );
-                      }
-                    },
-            ),
+                          );
+                        }
+                      },
+              ),
+            ],
           ],
         ],
       ),

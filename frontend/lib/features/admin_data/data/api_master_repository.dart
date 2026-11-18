@@ -19,6 +19,15 @@ class ApiMasterRepository implements MasterRepository {
   }
 
   @override
+  Future<Wilayah> wilayahCreate({required String nama}) async {
+    final res = await client.dio.post<Map<String, dynamic>>(
+      '/wilayah',
+      data: {'nama_wilayah': nama.trim()},
+    );
+    return Wilayah.fromJson(res.data!['data'] as Map<String, dynamic>);
+  }
+
+  @override
   Future<List<Toko>> tokoList({int? wilayahId, String? q}) async {
     // TODO(backend): Hubungkan ke GET /api/v1/toko
     final res = await client.dio.get<Map<String, dynamic>>(

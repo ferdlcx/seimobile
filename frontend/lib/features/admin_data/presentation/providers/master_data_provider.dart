@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/repository_providers.dart';
 import '../../../auth/data/models/pengguna_model.dart';
+import '../../../laporan/presentation/providers/laporan_provider.dart';
+import '../../../mapping/presentation/providers/mapping_admin_provider.dart';
+import '../../../mapping/presentation/providers/mapping_hari_ini_provider.dart';
+import '../../../monitoring/presentation/providers/monitoring_provider.dart';
 import '../../data/models/master_models.dart';
 
 class MasterDataState {
@@ -126,6 +130,28 @@ class MasterDataNotifier extends Notifier<MasterDataState> {
     }
   }
 
+  Future<bool> tambahWilayah(String nama) async {
+    state = state.copyWith(isLoading: true, clearError: true, clearBanner: true);
+    try {
+      final masterRepo = ref.read(masterRepositoryProvider);
+      final baru = await masterRepo.wilayahCreate(nama: nama);
+      state = state.copyWith(
+        wilayahList: [...state.wilayahList, baru],
+        isLoading: false,
+        successBanner: 'Wilayah "${baru.nama}" berhasil ditambahkan.',
+      );
+      ref.invalidate(mappingAdminProvider);
+      ref.invalidate(mappingHariIniProvider);
+      ref.invalidate(monitoringProvider);
+      ref.invalidate(laporanProvider);
+      return true;
+    } catch (e) {
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      state = state.copyWith(isLoading: false, errorMessage: msg);
+      return false;
+    }
+  }
+
   Future<bool> tambahToko({
     required String nama,
     required String noJo,
@@ -152,6 +178,10 @@ class MasterDataNotifier extends Notifier<MasterDataState> {
         isLoading: false,
         successBanner: 'Data toko "${baru.nama}" (${baru.noJo}) berhasil ditambahkan.',
       );
+      ref.invalidate(mappingAdminProvider);
+      ref.invalidate(mappingHariIniProvider);
+      ref.invalidate(monitoringProvider);
+      ref.invalidate(laporanProvider);
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');

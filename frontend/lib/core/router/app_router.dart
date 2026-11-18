@@ -203,7 +203,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/sales/kunjungan/wizard/:noJo',
         builder: (context, state) {
           final noJo = state.pathParameters['noJo'] ?? '';
-          return WizardJurnalScreen(noJo: noJo);
+          final editId = int.tryParse(state.uri.queryParameters['editId'] ?? '');
+          return WizardJurnalScreen(noJo: noJo, editId: editId);
         },
       ),
       GoRoute(

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/config/app_config.dart';
+import '../../../../core/providers/repository_providers.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_scaffold.dart';
 import '../../../../core/widgets/primary_button.dart';
 import '../../../admin_data/data/models/master_models.dart';
 import '../../../admin_data/presentation/providers/master_data_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../data/models/jurnal_kunjungan_model.dart';
 import '../providers/kunjungan_provider.dart';
 
 /// Layar Detail Toko & Validasi Radius GPS sebelum Check-in.
@@ -25,6 +27,7 @@ class DetailTokoScreen extends ConsumerStatefulWidget {
 
 class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
   Toko? _toko;
+  JurnalKunjungan? _latestFinalJournal;
 
   @override
   void initState() {
@@ -34,13 +37,22 @@ class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
     });
   }
 
-  void _initToko() {
+  Future<void> _initToko() async {
     final masterState = ref.read(masterDataProvider);
     final match = masterState.tokoList.where((t) => t.noJo == widget.noJo);
     if (match.isNotEmpty) {
       final t = match.first;
       setState(() => _toko = t);
       ref.read(kunjunganGpsProvider.notifier).perbaruiLokasi(t);
+    }
+    await _loadLatestJournal();
+  }
+
+  Future<void> _loadLatestJournal() async {
+    final latest =
+        await ref.read(jurnalRepositoryProvider).getLatestFinal(widget.noJo);
+    if (mounted) {
+      setState(() => _latestFinalJournal = latest);
     }
   }
 
@@ -242,8 +254,11 @@ class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
                   label: 'Check-in di Toko Ini',
                   backgroundColor: AppColors.salesOrange,
                   onPressed: gpsState.isInRadius
-                      ? () =>
-                          context.push('/sales/kunjungan/wizard/${toko.noJo}')
+                      ? () async {
+                          await context
+                              .push('/sales/kunjungan/wizard/${toko.noJo}');
+                          await _loadLatestJournal();
+                        }
                       : null,
                 ),
                 const SizedBox(height: 10),
@@ -258,6 +273,64 @@ class _DetailTokoScreenState extends ConsumerState<DetailTokoScreen> {
                       context.push('/sales/reschedule/tambah?noJo=${toko.noJo}');
                     },
                   ),
+
+                if (_latestFinalJournal != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'JURNAL TERCATAT',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${_latestFinalJournal!.jenisAktivitas} · ${_latestFinalJournal!.hasil.label}',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if (_latestFinalJournal!.catatan.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            _latestFinalJournal!.catatan,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 10),
+                        PrimaryButton(
+                          label: 'Edit Jurnal yang Sudah Dibuat',
+                          icon: Icons.edit_outlined,
+                          isOutlined: true,
+                          backgroundColor: AppColors.salesOrange,
+                          onPressed: () async {
+                            await context.push(
+                              '/sales/kunjungan/wizard/${toko.noJo}?editId=${_latestFinalJournal!.id}',
+                            );
+                            await _loadLatestJournal();
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
     );

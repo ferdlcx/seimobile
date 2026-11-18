@@ -68,25 +68,46 @@ void main() {
       );
       expect(akunBaru.isBaru, isTrue);
 
-      // Tambah toko baru JO-0999
+      // Tambah wilayah baru
+      final wilayahBaru = await master1.wilayahCreate(nama: 'Banyumas Utara');
+      expect(wilayahBaru.nama, equals('Banyumas Utara'));
+
+      // Tambah toko baru JO-0999 di wilayah baru
       final tokoBaru = await master1.tokoCreate(
         noJo: 'JO-0999',
         nama: 'Toko Sinar Baru',
-        wilayahId: 1,
+        wilayahId: wilayahBaru.id,
         alamat: 'Jl. Pahlawan No. 9',
       );
       expect(tokoBaru.noJo, equals('JO-0999'));
+      expect(tokoBaru.wilayah.nama, equals('Banyumas Utara'));
 
-      // Simpan jurnal final untuk toko JO-0501
-      await jurnal1.create(
+      // Simpan jurnal final dengan aktivitas Penagihan untuk toko JO-0501
+      final jurnalAwal = await jurnal1.create(
         noJo: 'JO-0501',
         hasil: HasilKunjungan.adaOrder,
+        jenisAktivitas: JenisAktivitasKunjungan.penagihan,
         catatan: 'Order baru via SQLite',
         fotoDisplay: 'disp.jpg',
         fotoNotaPo: 'nota.jpg',
         lat: -7.4562,
         lng: 109.2865,
         jarakM: 12.0,
+      );
+      expect(jurnalAwal.jenisAktivitas, equals(JenisAktivitasKunjungan.penagihan));
+
+      // Edit jurnal final yang sudah dibuat menjadi Pengambilan Barang
+      final jurnalEdited = await jurnal1.updateFinal(
+        id: jurnalAwal.id,
+        noJo: 'JO-0501',
+        hasil: HasilKunjungan.tidakAdaOrder,
+        jenisAktivitas: JenisAktivitasKunjungan.pengambilanBarang,
+        catatan: 'Pengambilan barang retur selesai',
+        fotoDisplay: 'disp.jpg',
+      );
+      expect(
+        jurnalEdited.jenisAktivitas,
+        equals(JenisAktivitasKunjungan.pengambilanBarang),
       );
 
       // Buat & setujui reschedule
@@ -126,6 +147,7 @@ void main() {
       final auth2 = SqliteAuthRepository(db2);
       final master2 = SqliteMasterRepository(db2);
       final mapping2 = SqliteMappingRepository(db2);
+      final jurnal2 = SqliteJurnalRepository(db2);
       final kondite2 = SqliteKonditeRepository(db2);
 
       // Login memakai akun yang baru dibuat di sesi 1 dengan password kustomnya!
@@ -136,10 +158,25 @@ void main() {
       );
       expect(loginSession.user.nama, equals('Rudi Hartono'));
 
-      // Verifikasi toko JO-0999, kunjungan JO-0501, dan kondite 100.0 tetap tersimpan
+      // Verifikasi wilayah baru, toko JO-0999 (termasuk untuk sales baru!), edit jurnal & kondite tetap tersimpan
+      final wilayahList2 = await master2.wilayah();
+      expect(wilayahList2.any((w) => w.nama == 'Banyumas Utara'), isTrue);
+
       final tokoList2 = await master2.tokoList();
       expect(tokoList2.any((t) => t.noJo == 'JO-0999'), isTrue);
 
+      final mappingRudi = await mapping2.hariIni();
+      expect(mappingRudi.daftarToko.any((t) => t.noJo == 'JO-0999'), isTrue);
+
+      final latestFinal = await jurnal2.getLatestFinal('JO-0501');
+      expect(latestFinal, isNotNull);
+      expect(
+        latestFinal!.jenisAktivitas,
+        equals(JenisAktivitasKunjungan.pengambilanBarang),
+      );
+      expect(latestFinal.catatan, equals('Pengambilan barang retur selesai'));
+
+      await auth2.logout();
       final hariIni2 = await mapping2.hariIni();
       expect(hariIni2.totalTarget, equals(7));
       expect(hariIni2.sudahDikunjungi, equals(5));

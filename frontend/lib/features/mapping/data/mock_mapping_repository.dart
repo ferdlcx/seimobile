@@ -78,11 +78,19 @@ class MockMappingRepository implements MappingRepository {
   @override
   Future<MappingHariIniData> hariIni({int? wilayahId}) async {
     await db.simulateNetworkDelay();
-    final currentMonthIdx = (db.getConfig().mockToday.month - 1).clamp(0, 11);
+    final today = db.getConfig().mockToday;
+    final currentMonthIdx = (today.month - 1).clamp(0, 11);
+    final activeUser = db.currentSession?.user;
+    final salesId =
+        (activeUser != null && activeUser.role == 'sales') ? activeUser.id : 2;
 
-    // Ambil toko yang direncanakan pada bulan berjalan untuk sales aktif (default Budi = 2)
+    if (!db.mappingList.any((m) => m.idSales == salesId && m.tahun == today.year)) {
+      await get(salesId: salesId, tahun: today.year);
+    }
+
+    // Ambil toko yang direncanakan pada bulan berjalan untuk sales aktif.
     final plannedMappings = db.mappingList.where((m) {
-      if (m.idSales != 2) return false;
+      if (m.idSales != salesId || m.tahun != today.year) return false;
       return m.bulan[currentMonthIdx];
     }).toList();
 

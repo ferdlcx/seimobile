@@ -21,6 +21,75 @@ class AdminDataScreen extends ConsumerStatefulWidget {
 class _AdminDataScreenState extends ConsumerState<AdminDataScreen> {
   int _selectedTab = 1; // Default tab Toko sesuai mockup
 
+  Future<void> _showTambahWilayahDialog() async {
+    final formKey = GlobalKey<FormState>();
+    final controller = TextEditingController();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Tambah Wilayah Baru',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+          ),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: controller,
+              autofocus: true,
+              decoration: const InputDecoration(
+                labelText: 'Nama Wilayah',
+                hintText: 'contoh: Banyumas Utara',
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'Nama wilayah wajib diisi';
+                }
+                return null;
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.adminTeal,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(dialogContext).pop(true);
+                }
+              },
+              child: const Text('Simpan Wilayah'),
+            ),
+          ],
+        );
+      },
+    );
+
+    final nama = controller.text.trim();
+    controller.dispose();
+
+    if (saved == true && nama.isNotEmpty) {
+      final ok = await ref.read(masterDataProvider.notifier).tambahWilayah(nama);
+      if (!ok && mounted) {
+        final err = ref.read(masterDataProvider).errorMessage;
+        if (err != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(err),
+              backgroundColor: AppColors.statusDitolakText,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(masterDataProvider);
@@ -65,7 +134,9 @@ class _AdminDataScreenState extends ConsumerState<AdminDataScreen> {
       },
       body: StateView(
         isLoading: state.isLoading && state.tokoList.isEmpty,
-        errorMessage: state.errorMessage,
+        errorMessage: state.tokoList.isEmpty && state.wilayahList.isEmpty
+            ? state.errorMessage
+            : null,
         onRetry: () => ref.read(masterDataProvider.notifier).loadAll(),
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -243,7 +314,7 @@ class _AdminDataScreenState extends ConsumerState<AdminDataScreen> {
                   context.go('/admin/data/tambah-toko');
                 },
               ),
-            ] else if (_selectedTab == 2)
+            ] else if (_selectedTab == 2) ...[
               // Tab 2: Wilayah
               ...state.wilayahList.map((w) {
                 return Container(
@@ -276,8 +347,14 @@ class _AdminDataScreenState extends ConsumerState<AdminDataScreen> {
                     ],
                   ),
                 );
-              })
-            else
+              }),
+              const SizedBox(height: 8),
+              PrimaryButton(
+                label: '+ Tambah Wilayah',
+                backgroundColor: AppColors.adminTeal,
+                onPressed: _showTambahWilayahDialog,
+              ),
+            ] else
               // Tab 3: Kriteria
               ...state.kriteriaList.map((k) {
                 return Container(

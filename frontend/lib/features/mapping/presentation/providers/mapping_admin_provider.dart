@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/repository_providers.dart';
+import '../../../laporan/presentation/providers/laporan_provider.dart';
+import '../../../monitoring/presentation/providers/monitoring_provider.dart';
 import '../../data/models/mapping_toko_model.dart';
+import 'mapping_hari_ini_provider.dart';
 
 class MappingAdminState {
   final int selectedSalesId;
@@ -96,6 +99,9 @@ class MappingAdminNotifier extends Notifier<MappingAdminState> {
         isSavedSuccess: true,
         savedTimestamp: DateTime(2026, 10, 30, 10, 24),
       );
+      ref.invalidate(mappingHariIniProvider);
+      ref.invalidate(monitoringProvider);
+      ref.invalidate(laporanProvider);
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');

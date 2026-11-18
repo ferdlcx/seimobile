@@ -1,5 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/repository_providers.dart';
+import '../../../admin_akun/presentation/providers/akun_provider.dart';
+import '../../../admin_data/presentation/providers/master_data_provider.dart';
+import '../../../kondite/presentation/providers/kondite_saya_provider.dart';
+import '../../../kondite/presentation/providers/manajer_kondite_provider.dart';
+import '../../../laporan/presentation/providers/laporan_provider.dart';
+import '../../../mapping/presentation/providers/mapping_admin_provider.dart';
+import '../../../mapping/presentation/providers/mapping_hari_ini_provider.dart';
+import '../../../monitoring/presentation/providers/monitoring_provider.dart';
+import '../../../reschedule/presentation/providers/reschedule_provider.dart';
 import '../../data/auth_repository.dart';
 
 /// State autentikasi saat ini (menyimpan user yang login, token, dan mode aktif).
@@ -44,6 +53,18 @@ class AuthNotifier extends Notifier<AuthState> {
     return const AuthState();
   }
 
+  void _invalidateFeatureProviders() {
+    ref.invalidate(akunProvider);
+    ref.invalidate(masterDataProvider);
+    ref.invalidate(mappingAdminProvider);
+    ref.invalidate(mappingHariIniProvider);
+    ref.invalidate(monitoringProvider);
+    ref.invalidate(rescheduleProvider);
+    ref.invalidate(konditeSayaProvider);
+    ref.invalidate(manajerKonditeProvider);
+    ref.invalidate(laporanProvider);
+  }
+
   Future<bool> login({
     required String username,
     required String password,
@@ -60,6 +81,7 @@ class AuthNotifier extends Notifier<AuthState> {
         mode: mode,
       );
       state = AuthState(session: session, isLoading: false);
+      _invalidateFeatureProviders();
       return true;
     } catch (e) {
       final msg = e.toString().replaceFirst('Exception: ', '');
@@ -81,12 +103,14 @@ class AuthNotifier extends Notifier<AuthState> {
     );
     ref.read(authRepositoryProvider).updateMode(newMode);
     state = state.copyWith(session: updated);
+    _invalidateFeatureProviders();
   }
 
   Future<void> logout() async {
     final repo = ref.read(authRepositoryProvider);
     await repo.logout();
     state = const AuthState();
+    _invalidateFeatureProviders();
   }
 }
 

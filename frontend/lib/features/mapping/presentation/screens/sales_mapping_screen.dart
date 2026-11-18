@@ -171,6 +171,18 @@ class SalesMappingScreen extends ConsumerWidget {
               backgroundColor: AppColors.salesOrange,
               onPressed: () => context.go('/sales/kunjungan'),
             ),
+            if (auth.role == 'manajer_sales') ...[
+              const SizedBox(height: 8),
+              PrimaryButton(
+                label: 'Kembali ke Mode Manajer',
+                isOutlined: true,
+                backgroundColor: AppColors.manajerBlue,
+                onPressed: () {
+                  ref.read(authProvider.notifier).switchMode('manajer');
+                  context.go('/manajer/beranda');
+                },
+              ),
+            ],
           ],
         ),
       ),

@@ -606,8 +606,17 @@ void main() {
       await tester.pump(const Duration(milliseconds: 1500));
       await tester.pumpAndSettle();
 
-      // Sekarang berada di layar Mapping Sales
+      // Sekarang berada di layar Mapping Sales dan bisa kembali ke Mode Manajer
       expect(find.text('Mapping hari ini'), findsOneWidget);
+      expect(find.text('Kembali ke Mode Manajer'), findsOneWidget);
+
+      await tester.ensureVisible(find.text('Kembali ke Mode Manajer'));
+      await tester.tap(find.text('Kembali ke Mode Manajer'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1500));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Beranda & monitoring'), findsOneWidget);
     });
 
     testWidgets('Manajer Approval Reschedule: setujui pengajuan reschedule sales', (tester) async {
@@ -693,5 +702,143 @@ void main() {
       expect(find.text('Hasil cetak laporan rekap'), findsOneWidget);
       expect(find.text('TOTAL'), findsOneWidget);
     });
+  });
+
+  group('Tahap 6 - Sinkronisasi Lintas Peran, Wilayah & Edit Jurnal', () {
+    testWidgets(
+      'Admin tambah akun, tambah wilayah, tambah toko langsung sinkron ke Data Master & Sales',
+      (tester) async {
+        tester.view.physicalSize = const Size(800, 2200);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+
+        await tester.pumpWidget(
+          const ProviderScope(child: SeuiCentreApp()),
+        );
+        await tester.pump(const Duration(milliseconds: 2000));
+        await tester.pumpAndSettle();
+
+        // Login Admin Tagihan
+        await tester.tap(find.text('Admin Tagihan'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Masuk'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Langsung masuk ke Menu Akun'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+
+        // 1. Tambah akun Sales baru
+        await tester.ensureVisible(find.text('+ Tambah Akun'));
+        await tester.tap(find.text('+ Tambah Akun'));
+        await tester.pumpAndSettle();
+        final akunFields = find.byType(TextFormField);
+        await tester.enterText(akunFields.at(0), 'Siti Aminah');
+        await tester.enterText(akunFields.at(1), 'siti.sales');
+        await tester.enterText(akunFields.at(2), 'password123');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Simpan Akun'));
+        await tester.tap(find.text('Simpan Akun'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+
+        // Pindah ke Data Master -> tab Sales -> Siti Aminah langsung muncul!
+        await tester.tap(find.text('Data'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1500));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Sales'));
+        await tester.pumpAndSettle();
+        expect(find.text('Siti Aminah'), findsOneWidget);
+
+        // 2. Pindah ke tab Wilayah -> Tambah Wilayah baru
+        await tester.tap(find.text('Wilayah'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('+ Tambah Wilayah'));
+        await tester.tap(find.text('+ Tambah Wilayah'));
+        await tester.pumpAndSettle();
+        await tester.enterText(find.byType(TextFormField).last, 'Banyumas Utara');
+        await tester.tap(find.text('Simpan Wilayah'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+        expect(find.text('Banyumas Utara'), findsOneWidget);
+
+        // 3. Pindah ke tab Toko -> Tambah Toko baru
+        await tester.tap(find.text('Toko'));
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('+ Tambah Data Toko'));
+        await tester.tap(find.text('+ Tambah Data Toko'));
+        await tester.pumpAndSettle();
+
+        final tokoFields = find.byType(TextFormField);
+        await tester.enterText(tokoFields.at(0), 'Toko Lintas Sesi');
+        await tester.enterText(tokoFields.at(1), 'JO-0777');
+        await tester.enterText(tokoFields.at(2), 'Jl. Slamet Riyadi No. 8');
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(find.text('Simpan Data Toko'));
+        await tester.tap(find.text('Simpan Data Toko'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1500));
+        await tester.pumpAndSettle();
+        expect(find.text('Toko Lintas Sesi'), findsOneWidget);
+
+        // Logout Admin dan login Sales tanpa restart app
+        await tester.tap(find.text('Keluar'));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.text('Sales'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Masuk'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Langsung masuk ke Menu Mapping'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1500));
+        await tester.pumpAndSettle();
+
+        // Toko baru langsung muncul di Mapping Sales!
+        expect(find.text('Toko Lintas Sesi'), findsOneWidget);
+
+        // 4. Sales buka Kunjungan -> Toko Makmur Jaya -> Edit Jurnal yang Sudah Dibuat
+        await tester.tap(find.text('Kunjungan'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1500));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Toko Makmur Jaya'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1500));
+        await tester.pumpAndSettle();
+
+        expect(find.text('JURNAL TERCATAT'), findsOneWidget);
+        await tester.ensureVisible(find.text('Edit Jurnal yang Sudah Dibuat'));
+        await tester.tap(find.text('Edit Jurnal yang Sudah Dibuat'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1000));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Edit Jurnal Kunjungan'), findsOneWidget);
+        await tester.ensureVisible(find.text('Pengambilan Barang'));
+        await tester.tap(find.text('Pengambilan Barang'));
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(find.text('Lanjut'));
+        await tester.tap(find.text('Lanjut'));
+        await tester.pumpAndSettle();
+
+        await tester.ensureVisible(find.text('Simpan Perubahan Jurnal'));
+        await tester.tap(find.text('Simpan Perubahan Jurnal'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1500));
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Pengambilan Barang'), findsOneWidget);
+      },
+    );
   });
 }

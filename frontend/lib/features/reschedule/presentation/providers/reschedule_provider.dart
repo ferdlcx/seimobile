@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/providers/repository_providers.dart';
+import '../../../laporan/presentation/providers/laporan_provider.dart';
+import '../../../monitoring/presentation/providers/monitoring_provider.dart';
 import '../../data/models/pengajuan_reschedule_model.dart';
 
 class RescheduleState {
@@ -84,6 +86,8 @@ class RescheduleNotifier extends Notifier<RescheduleState> {
         items: [baru, ...state.items],
         isSubmitting: false,
       );
+      ref.invalidate(monitoringProvider);
+      ref.invalidate(laporanProvider);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -113,6 +117,8 @@ class RescheduleNotifier extends Notifier<RescheduleState> {
             state.items.map((item) => item.id == id ? updated : item).toList(),
         successBanner: banner,
       );
+      ref.invalidate(monitoringProvider);
+      ref.invalidate(laporanProvider);
       return true;
     } catch (e) {
       state = state.copyWith(

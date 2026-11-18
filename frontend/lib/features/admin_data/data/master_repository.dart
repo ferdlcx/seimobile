@@ -4,6 +4,8 @@ import 'models/master_models.dart';
 abstract class MasterRepository {
   Future<List<Wilayah>> wilayah();
 
+  Future<Wilayah> wilayahCreate({required String nama});
+
   Future<List<Toko>> tokoList({int? wilayahId, String? q});
 
   Future<Toko> tokoCreate({

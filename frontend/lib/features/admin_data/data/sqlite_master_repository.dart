@@ -23,6 +23,29 @@ class SqliteMasterRepository implements MasterRepository {
   }
 
   @override
+  Future<Wilayah> wilayahCreate({required String nama}) async {
+    final trimmed = nama.trim();
+    if (trimmed.isEmpty) {
+      throw Exception('Nama wilayah wajib diisi.');
+    }
+    final db = await dbHelper.database;
+    final existing = await db.query(
+      'wilayah',
+      columns: ['id_wilayah'],
+      where: 'LOWER(nama_wilayah) = ?',
+      whereArgs: [trimmed.toLowerCase()],
+      limit: 1,
+    );
+    if (existing.isNotEmpty) {
+      throw Exception('Wilayah "$trimmed" sudah terdaftar.');
+    }
+    final newId = await db.insert('wilayah', {
+      'nama_wilayah': trimmed,
+    });
+    return Wilayah(id: newId, nama: trimmed);
+  }
+
+  @override
   Future<List<Toko>> tokoList({int? wilayahId, String? q}) async {
     final db = await dbHelper.database;
     final today = dbHelper.getConfig().mockToday;
@@ -142,19 +165,30 @@ class SqliteMasterRepository implements MasterRepository {
         'hari_sejak_kunjungan_terakhir': 0,
       });
 
-      final idMapping = await txn.insert('mapping_toko', {
-        'id_admin': 1,
-        'id_sales': 2,
-        'no_jo': upperJo,
-        'tahun': todayYear,
-      });
-      for (int m = 1; m <= 12; m++) {
-        await txn.insert('mapping_bulan', {
-          'id_mapping': idMapping,
-          'bulan': m,
-          'direncanakan': 1,
-          'terealisasi': 0,
+      final activeSalesRows = await txn.query(
+        'pengguna',
+        columns: ['id'],
+        where: "role = 'sales' AND aktif = 1",
+      );
+      final salesIds = activeSalesRows.isEmpty
+          ? <int>[2]
+          : activeSalesRows.map((r) => r['id'] as int).toList();
+
+      for (final sid in salesIds) {
+        final idMapping = await txn.insert('mapping_toko', {
+          'id_admin': 1,
+          'id_sales': sid,
+          'no_jo': upperJo,
+          'tahun': todayYear,
         });
+        for (int m = 1; m <= 12; m++) {
+          await txn.insert('mapping_bulan', {
+            'id_mapping': idMapping,
+            'bulan': m,
+            'direncanakan': 1,
+            'terealisasi': 0,
+          });
+        }
       }
     });
 

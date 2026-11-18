@@ -28,6 +28,7 @@ class MockJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan> create({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -53,6 +54,7 @@ class MockJurnalRepository implements JurnalRepository {
       noJo: noJo,
       tanggal: now,
       hasil: hasil,
+      jenisAktivitas: jenisAktivitas,
       catatan: catatan.trim(),
       fotoDisplay: fotoDisplay,
       fotoNotaPo: fotoNotaPo,
@@ -75,6 +77,7 @@ class MockJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan> saveDraft({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -96,6 +99,7 @@ class MockJurnalRepository implements JurnalRepository {
       noJo: noJo,
       tanggal: db.getConfig().mockToday,
       hasil: hasil,
+      jenisAktivitas: jenisAktivitas,
       catatan: catatan,
       fotoDisplay: fotoDisplay,
       fotoNotaPo: fotoNotaPo,
@@ -114,6 +118,52 @@ class MockJurnalRepository implements JurnalRepository {
   }
 
   @override
+  Future<JurnalKunjungan?> getLatestFinal(String noJo) async {
+    final matches = db.jurnalList.where(
+      (j) => j.noJo == noJo && j.status == StatusJurnal.finalStatus,
+    );
+    if (matches.isEmpty) return null;
+    return matches.first;
+  }
+
+  @override
+  Future<JurnalKunjungan> updateFinal({
+    required int id,
+    required String noJo,
+    required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
+    required String catatan,
+    String? fotoDisplay,
+    String? fotoNotaPo,
+  }) async {
+    await db.simulateNetworkDelay();
+
+    if (hasil == HasilKunjungan.adaOrder &&
+        (fotoNotaPo == null || fotoNotaPo.trim().isEmpty)) {
+      throw Exception('Foto nota PO wajib dilampirkan bila hasil kunjungan Ada Order.');
+    }
+
+    final idx = db.jurnalList.indexWhere(
+      (j) => j.id == id && j.noJo == noJo,
+    );
+    if (idx == -1) {
+      throw Exception('Jurnal kunjungan tidak ditemukan untuk diperbarui.');
+    }
+
+    final updated = db.jurnalList[idx].copyWith(
+      hasil: hasil,
+      jenisAktivitas: jenisAktivitas,
+      catatan: catatan.trim(),
+      fotoDisplay: fotoDisplay,
+      fotoNotaPo: fotoNotaPo,
+    );
+    final copy = List<JurnalKunjungan>.from(db.jurnalList);
+    copy[idx] = updated;
+    db.jurnalList = copy;
+    return updated;
+  }
+
+  @override
   Future<JurnalKunjungan> finalize(int id) async {
     await db.simulateNetworkDelay();
     final entry = db.draftByNoJo.values.where((d) => d.id == id);
@@ -124,6 +174,7 @@ class MockJurnalRepository implements JurnalRepository {
     return create(
       noJo: draft.noJo,
       hasil: draft.hasil,
+      jenisAktivitas: draft.jenisAktivitas,
       catatan: draft.catatan,
       fotoDisplay: draft.fotoDisplay,
       fotoNotaPo: draft.fotoNotaPo,

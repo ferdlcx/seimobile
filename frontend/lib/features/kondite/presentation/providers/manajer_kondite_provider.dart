@@ -4,6 +4,7 @@ import '../../../../core/providers/repository_providers.dart';
 import '../../../../core/utils/nilai_kondite.dart';
 import '../../../admin_data/data/models/master_models.dart';
 import '../../../auth/data/models/pengguna_model.dart';
+import 'kondite_saya_provider.dart';
 
 class ManajerKonditeState {
   final List<Pengguna> salesList;
@@ -170,6 +171,7 @@ class ManajerKonditeNotifier extends Notifier<ManajerKonditeState> {
       );
 
       state = state.copyWith(isSaving: false, isSuccessSave: true);
+      ref.invalidate(konditeSayaProvider);
       return true;
     } catch (e) {
       state = state.copyWith(

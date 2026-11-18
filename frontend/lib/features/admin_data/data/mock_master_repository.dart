@@ -16,6 +16,27 @@ class MockMasterRepository implements MasterRepository {
   }
 
   @override
+  Future<Wilayah> wilayahCreate({required String nama}) async {
+    await db.simulateNetworkDelay();
+    final trimmed = nama.trim();
+    if (trimmed.isEmpty) {
+      throw Exception('Nama wilayah wajib diisi.');
+    }
+    final exists = db.wilayahList.any(
+      (w) => w.nama.toLowerCase() == trimmed.toLowerCase(),
+    );
+    if (exists) {
+      throw Exception('Wilayah "$trimmed" sudah terdaftar.');
+    }
+    final nextId = db.wilayahList.isEmpty
+        ? 1
+        : db.wilayahList.map((w) => w.id).reduce((a, b) => a > b ? a : b) + 1;
+    final baru = Wilayah(id: nextId, nama: trimmed);
+    db.wilayahList = [...db.wilayahList, baru];
+    return baru;
+  }
+
+  @override
   Future<List<Toko>> tokoList({int? wilayahId, String? q}) async {
     await db.simulateNetworkDelay();
     return db.tokoList.where((t) {
@@ -67,24 +88,33 @@ class MockMasterRepository implements MasterRepository {
 
     db.tokoList = [...db.tokoList, baru];
 
-    // Tambahkan juga baris default ke mapping Budi agar muncul di grid Susun Mapping.
-    final nextMapId = db.mappingList.isEmpty
+    // Tambahkan juga baris default ke mapping seluruh sales aktif agar langsung muncul.
+    final activeSalesIds = db.akunList
+        .where((u) => u.role == 'sales' && u.aktif)
+        .map((u) => u.id)
+        .toList();
+    final targetSalesIds = activeSalesIds.isEmpty ? <int>[2] : activeSalesIds;
+
+    var nextMapId = db.mappingList.isEmpty
         ? 1
         : db.mappingList
                 .map((e) => e.idMapping)
                 .reduce((a, b) => a > b ? a : b) +
             1;
-    db.mappingList = [
-      ...db.mappingList,
-      MappingToko(
-        idMapping: nextMapId,
-        idSales: 2,
-        tahun: 2026,
-        toko: baru,
-        bulan: List<bool>.filled(12, true),
-        terealisasi: List<bool>.filled(12, false),
-      ),
-    ];
+    final newMappings = <MappingToko>[];
+    for (final sid in targetSalesIds) {
+      newMappings.add(
+        MappingToko(
+          idMapping: nextMapId++,
+          idSales: sid,
+          tahun: db.getConfig().mockToday.year,
+          toko: baru,
+          bulan: List<bool>.filled(12, true),
+          terealisasi: List<bool>.filled(12, false),
+        ),
+      );
+    }
+    db.mappingList = [...db.mappingList, ...newMappings];
 
     return baru;
   }

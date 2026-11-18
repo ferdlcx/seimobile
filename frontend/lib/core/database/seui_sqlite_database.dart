@@ -71,7 +71,7 @@ class SeuiSqliteDatabase {
     }
 
     final options = OpenDatabaseOptions(
-      version: 1,
+      version: 2,
       singleInstance: !isInMemory,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
@@ -79,6 +79,13 @@ class SeuiSqliteDatabase {
       onCreate: (db, version) async {
         await _createSchema(db);
         await _seedInitialData(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            "ALTER TABLE jurnal_kunjungan ADD COLUMN jenis_aktivitas TEXT NOT NULL DEFAULT 'Kunjungan & Order'",
+          );
+        }
       },
     );
 
@@ -160,6 +167,7 @@ class SeuiSqliteDatabase {
         no_jo TEXT NOT NULL,
         tgl_kunjungan TEXT NOT NULL,
         status_order TEXT NOT NULL,
+        jenis_aktivitas TEXT NOT NULL DEFAULT 'Kunjungan & Order',
         ket_aktivitas TEXT NOT NULL DEFAULT '',
         foto_display_path TEXT,
         foto_nota_po_path TEXT,

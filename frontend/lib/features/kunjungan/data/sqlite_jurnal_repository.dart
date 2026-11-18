@@ -15,6 +15,8 @@ class SqliteJurnalRepository implements JurnalRepository {
       noJo: r['no_jo'] as String,
       tanggal: DateTime.parse(r['tgl_kunjungan'] as String),
       hasil: HasilKunjungan.fromString(r['status_order'] as String?),
+      jenisAktivitas: (r['jenis_aktivitas'] as String?) ??
+          JenisAktivitasKunjungan.kunjunganOrder,
       catatan: r['ket_aktivitas'] as String? ?? '',
       fotoDisplay: r['foto_display_path'] as String?,
       fotoNotaPo: r['foto_nota_po_path'] as String?,
@@ -55,6 +57,7 @@ class SqliteJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan> create({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -100,6 +103,7 @@ class SqliteJurnalRepository implements JurnalRepository {
         'no_jo': noJo,
         'tgl_kunjungan': tglIso,
         'status_order': hasil.jsonValue,
+        'jenis_aktivitas': jenisAktivitas,
         'ket_aktivitas': catatan.trim(),
         'foto_display_path': fotoDisplay,
         'foto_nota_po_path': fotoNotaPo,
@@ -145,6 +149,7 @@ class SqliteJurnalRepository implements JurnalRepository {
   Future<JurnalKunjungan> saveDraft({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -170,6 +175,7 @@ class SqliteJurnalRepository implements JurnalRepository {
       'no_jo': noJo,
       'tgl_kunjungan': now.toIso8601String(),
       'status_order': hasil.jsonValue,
+      'jenis_aktivitas': jenisAktivitas,
       'ket_aktivitas': catatan,
       'foto_display_path': fotoDisplay,
       'foto_nota_po_path': fotoNotaPo,
@@ -216,6 +222,63 @@ class SqliteJurnalRepository implements JurnalRepository {
   }
 
   @override
+  Future<JurnalKunjungan?> getLatestFinal(String noJo) async {
+    final db = await dbHelper.database;
+    final rows = await db.query(
+      'jurnal_kunjungan',
+      where: "no_jo = ? AND status = 'final'",
+      whereArgs: [noJo],
+      orderBy: 'id_kunjungan DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return _mapRow(rows.first);
+  }
+
+  @override
+  Future<JurnalKunjungan> updateFinal({
+    required int id,
+    required String noJo,
+    required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
+    required String catatan,
+    String? fotoDisplay,
+    String? fotoNotaPo,
+  }) async {
+    if (hasil == HasilKunjungan.adaOrder &&
+        (fotoNotaPo == null || fotoNotaPo.trim().isEmpty)) {
+      throw Exception(
+        'Foto nota PO wajib dilampirkan bila hasil kunjungan Ada Order.',
+      );
+    }
+
+    final db = await dbHelper.database;
+    final updatedCount = await db.update(
+      'jurnal_kunjungan',
+      {
+        'status_order': hasil.jsonValue,
+        'jenis_aktivitas': jenisAktivitas,
+        'ket_aktivitas': catatan.trim(),
+        'foto_display_path': fotoDisplay,
+        'foto_nota_po_path': fotoNotaPo,
+      },
+      where: "id_kunjungan = ? AND no_jo = ? AND status = 'final'",
+      whereArgs: [id, noJo],
+    );
+    if (updatedCount == 0) {
+      throw Exception('Jurnal kunjungan tidak ditemukan untuk diperbarui.');
+    }
+
+    final rows = await db.query(
+      'jurnal_kunjungan',
+      where: 'id_kunjungan = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return _mapRow(rows.first);
+  }
+
+  @override
   Future<JurnalKunjungan> finalize(int id) async {
     final db = await dbHelper.database;
     final rows = await db.query(
@@ -231,6 +294,7 @@ class SqliteJurnalRepository implements JurnalRepository {
     return create(
       noJo: draft.noJo,
       hasil: draft.hasil,
+      jenisAktivitas: draft.jenisAktivitas,
       catatan: draft.catatan,
       fotoDisplay: draft.fotoDisplay,
       fotoNotaPo: draft.fotoNotaPo,

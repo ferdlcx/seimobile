@@ -7,6 +7,7 @@ abstract class JurnalRepository {
   Future<JurnalKunjungan> create({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -18,6 +19,7 @@ abstract class JurnalRepository {
   Future<JurnalKunjungan> saveDraft({
     required String noJo,
     required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required String catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -27,6 +29,18 @@ abstract class JurnalRepository {
   });
 
   Future<JurnalKunjungan?> getDraft(String noJo);
+
+  Future<JurnalKunjungan?> getLatestFinal(String noJo);
+
+  Future<JurnalKunjungan> updateFinal({
+    required int id,
+    required String noJo,
+    required HasilKunjungan hasil,
+    String jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
+    required String catatan,
+    String? fotoDisplay,
+    String? fotoNotaPo,
+  });
 
   Future<JurnalKunjungan> finalize(int id);
 }

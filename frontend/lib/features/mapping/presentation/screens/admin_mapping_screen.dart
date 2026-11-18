@@ -43,6 +43,15 @@ class AdminMappingScreen extends ConsumerWidget {
       ),
     ];
 
+    final activeSalesList = masterState.salesList
+        .where((s) => s.aktif && s.role == 'sales')
+        .toList();
+    final selectedSalesNama = activeSalesList
+        .where((s) => s.id == state.selectedSalesId)
+        .map((s) => s.nama)
+        .firstOrNull ??
+        'Budi Santoso';
+
     return AppScaffold(
       roleLabel: 'Admin Tagihan',
       menuTitle: 'Mapping',
@@ -77,14 +86,33 @@ class AdminMappingScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 4),
               if (!state.isSavedSuccess) ...[
-                const Text(
-                  'Sales: Budi Santoso · Tahun 2026. Ketuk kotak untuk menandai bulan kunjungan.',
-                  style: TextStyle(
+                Text(
+                  'Sales: $selectedSalesNama · Tahun ${state.selectedTahun}. Ketuk kotak untuk menandai bulan kunjungan.',
+                  style: const TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 12),
+                if (activeSalesList.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: activeSalesList.map((s) {
+                      return PillChip(
+                        label: s.nama,
+                        selected: state.selectedSalesId == s.id,
+                        activeColor: AppColors.adminTeal,
+                        onTap: () {
+                          ref
+                              .read(mappingAdminProvider.notifier)
+                              .setSales(s.id);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+                const SizedBox(height: 10),
 
                 // Filter Wilayah (2 baris pill)
                 WilayahFilterBar(
@@ -133,7 +161,7 @@ class AdminMappingScreen extends ConsumerWidget {
 
               if (state.isSavedSuccess) ...[
                 Text(
-                  'Disimpan 30 Okt 2026, 10.24. Sales Budi Santoso, ${state.items.length} toko, 12 bulan.',
+                  'Disimpan 30 Okt 2026, 10.24. Sales $selectedSalesNama, ${state.items.length} toko, 12 bulan.',
                   style: const TextStyle(
                     fontSize: 11.5,
                     color: AppColors.textSecondary,

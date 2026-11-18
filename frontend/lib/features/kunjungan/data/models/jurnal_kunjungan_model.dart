@@ -38,6 +38,19 @@ enum StatusJurnal {
   }
 }
 
+/// Pilihan jenis aktivitas pada form jurnal kunjungan sales.
+class JenisAktivitasKunjungan {
+  static const String kunjunganOrder = 'Kunjungan & Order';
+  static const String pengambilanBarang = 'Pengambilan Barang';
+  static const String penagihan = 'Penagihan';
+
+  static const List<String> values = [
+    kunjunganOrder,
+    pengambilanBarang,
+    penagihan,
+  ];
+}
+
 /// Model jurnal kunjungan lapangan sales.
 class JurnalKunjungan {
   final int id;
@@ -45,6 +58,7 @@ class JurnalKunjungan {
   final String noJo;
   final DateTime tanggal;
   final HasilKunjungan hasil;
+  final String jenisAktivitas;
   final String catatan;
   final String? fotoDisplay;
   final String? fotoNotaPo;
@@ -59,6 +73,7 @@ class JurnalKunjungan {
     required this.noJo,
     required this.tanggal,
     required this.hasil,
+    this.jenisAktivitas = JenisAktivitasKunjungan.kunjunganOrder,
     required this.catatan,
     this.fotoDisplay,
     this.fotoNotaPo,
@@ -74,6 +89,7 @@ class JurnalKunjungan {
     String? noJo,
     DateTime? tanggal,
     HasilKunjungan? hasil,
+    String? jenisAktivitas,
     String? catatan,
     String? fotoDisplay,
     String? fotoNotaPo,
@@ -88,6 +104,7 @@ class JurnalKunjungan {
       noJo: noJo ?? this.noJo,
       tanggal: tanggal ?? this.tanggal,
       hasil: hasil ?? this.hasil,
+      jenisAktivitas: jenisAktivitas ?? this.jenisAktivitas,
       catatan: catatan ?? this.catatan,
       fotoDisplay: fotoDisplay ?? this.fotoDisplay,
       fotoNotaPo: fotoNotaPo ?? this.fotoNotaPo,
@@ -109,6 +126,8 @@ class JurnalKunjungan {
       hasil: HasilKunjungan.fromString(
         (json['status_order'] ?? json['hasil']) as String?,
       ),
+      jenisAktivitas: (json['jenis_aktivitas'] as String?) ??
+          JenisAktivitasKunjungan.kunjunganOrder,
       catatan: (json['ket_aktivitas'] ?? json['catatan']) as String? ?? '',
       fotoDisplay:
           (json['foto_display_path'] ?? json['foto_display']) as String?,
@@ -128,6 +147,7 @@ class JurnalKunjungan {
       'no_jo': noJo,
       'tgl_kunjungan': tanggal.toIso8601String(),
       'status_order': hasil.jsonValue,
+      'jenis_aktivitas': jenisAktivitas,
       'ket_aktivitas': catatan,
       'foto_display_path': fotoDisplay,
       'foto_nota_po_path': fotoNotaPo,
