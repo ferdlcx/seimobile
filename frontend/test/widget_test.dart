@@ -762,6 +762,7 @@ void main() {
         await tester.tap(find.text('+ Tambah Wilayah'));
         await tester.pumpAndSettle();
         await tester.enterText(find.byType(TextFormField).last, 'Banyumas Utara');
+        await tester.pumpAndSettle();
         await tester.tap(find.text('Simpan Wilayah'));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 1000));

@@ -22,59 +22,12 @@ class _AdminDataScreenState extends ConsumerState<AdminDataScreen> {
   int _selectedTab = 1; // Default tab Toko sesuai mockup
 
   Future<void> _showTambahWilayahDialog() async {
-    final formKey = GlobalKey<FormState>();
-    final controller = TextEditingController();
-    final saved = await showDialog<bool>(
+    final nama = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text(
-            'Tambah Wilayah Baru',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-          ),
-          content: Form(
-            key: formKey,
-            child: TextFormField(
-              controller: controller,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Nama Wilayah',
-                hintText: 'contoh: Banyumas Utara',
-              ),
-              validator: (val) {
-                if (val == null || val.trim().isEmpty) {
-                  return 'Nama wilayah wajib diisi';
-                }
-                return null;
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.adminTeal,
-                foregroundColor: Colors.white,
-              ),
-              onPressed: () {
-                if (formKey.currentState!.validate()) {
-                  Navigator.of(dialogContext).pop(true);
-                }
-              },
-              child: const Text('Simpan Wilayah'),
-            ),
-          ],
-        );
-      },
+      builder: (_) => const _TambahWilayahDialog(),
     );
 
-    final nama = controller.text.trim();
-    controller.dispose();
-
-    if (saved == true && nama.isNotEmpty) {
+    if (nama != null && nama.isNotEmpty) {
       final ok = await ref.read(masterDataProvider.notifier).tambahWilayah(nama);
       if (!ok && mounted) {
         final err = ref.read(masterDataProvider).errorMessage;
@@ -396,6 +349,69 @@ class _AdminDataScreenState extends ConsumerState<AdminDataScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TambahWilayahDialog extends StatefulWidget {
+  const _TambahWilayahDialog();
+
+  @override
+  State<_TambahWilayahDialog> createState() => _TambahWilayahDialogState();
+}
+
+class _TambahWilayahDialogState extends State<_TambahWilayahDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text(
+        'Tambah Wilayah Baru',
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+      ),
+      content: Form(
+        key: _formKey,
+        child: TextFormField(
+          controller: _controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Nama Wilayah',
+            hintText: 'contoh: Banyumas Utara',
+          ),
+          validator: (val) {
+            if (val == null || val.trim().isEmpty) {
+              return 'Nama wilayah wajib diisi';
+            }
+            return null;
+          },
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Batal'),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.adminTeal,
+            foregroundColor: Colors.white,
+          ),
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              Navigator.of(context).pop(_controller.text.trim());
+            }
+          },
+          child: const Text('Simpan Wilayah'),
+        ),
+      ],
     );
   }
 }
